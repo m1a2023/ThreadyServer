@@ -1,0 +1,45 @@
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore the compiled directories
+__src/pycache/
+
+# Ignore virtual environments
+env/
+venv/
+
+# Ignore log files
+*.log
+
+# Ignore .env files for sensitive information
+.env
+
+# Ignore any IDE-specific files (for example, PyCharm, VSCode)
+.idea/
+.vscode/
+
+# Ignore backup files from editors
+*~
+
+# Ignore test coverage reports
+.coverage
+*.coveragerc
+
+# Ignore database files (if applicable)
+*.sqlite3
+
+# Ignore build directories
+build/
+dist/
+*.egg-info/
+
+# Ignore configuration files for packaging
+*.egg
+*.tar.gz
+
+# Ignore any other unwanted files
+.DS_Store
+Thumbs.db
