@@ -12,9 +12,9 @@ router = APIRouter()
 @router.get("/api/llm/")
 async def send_api_request_to_llm(
   url_path: str, 
-  json: Optional[ dict ] = None, 
-  stream: Optional[ bool ] = False,
-  timeout: Optional[ int ] = 30 
+  json: Optional[dict] = None, 
+  stream: Optional[bool] = False,
+  timeout: Optional[int] = 30 
 ):
   """ Send unblocking error json """
   if not json: return { "error": "Body json prompt is required." }
