@@ -31,7 +31,6 @@ async def send_api_request_to_llm(
   else: 
     """ Get only one json response """
     async with httpx.AsyncClient() as client:
-      response = await client.post(
-        url=url_path , json=json, timeout=timeout
-      )
-    return response.json()
+      response = await client.post(url=url_path, json=json, timeout=timeout)
+      result = response.json()
+      return result
