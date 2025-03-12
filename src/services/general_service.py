@@ -80,6 +80,10 @@ async def get_all_projects_by_user(user: Users) -> Sequence[Projects]:
   with Session(db.engine) as session:
     return session.exec(select(Projects).where(Projects.owner_id == user.id)).all()
 
+async def get_all_projects_owner_id(owner_id: int) -> Sequence[Projects]:
+  with Session(db.engine) as session:
+    return session.exec(select(Projects).where(Projects.owner_id == owner_id)).all()
+
 async def get_project_by_id(id: int) -> Projects:
   with Session(db.engine) as session:
     return session.exec(select(Projects).where(Projects.id == id)).one()
@@ -117,7 +121,7 @@ async def delete_projects_by_user(user: Users) -> bool:
     return session.exec(select(Projects).where(Projects.owner_id == user.id)).first() is not None
 
 """ UPDATE """
-async def update_project_by_id(upd_project: ProjectUpdate, project_id: int) -> bool:
+async def update_project_by_id(update: ProjectUpdate, project_id: int) -> bool:
   with Session(db.engine) as session:
      query = select(Projects).where(Projects.id == project_id)
      project = session.exec(query).first()
@@ -125,13 +129,19 @@ async def update_project_by_id(upd_project: ProjectUpdate, project_id: int) -> b
      if project is None:
        return False
 
-     if upd_project.new_title is not None:
-       project.title = upd_project.new_title
-     if upd_project.new_description is not None:
-       project.description = upd_project.new_description
+     if update.new_title is not None:
+       project.title = update.new_title
+     if update.new_description is not None:
+       project.description = update.new_description
 
      project.changed_at = datetime.now(timezone.utc)
 
      session.commit()
      session.refresh(project) 
      return True
+  
+
+#*
+#*	Tasks table
+#* 
+#TODO
