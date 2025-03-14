@@ -51,12 +51,13 @@ class TaskStatus(StrEnum):
     DONE = "done"
 
 class TaskBase(SQLModel):
-    title: str = Field(index=True, max_length=64)
+    title: str = Field(default=None, max_length=64)
     description: Optional[str] = Field(default=None, max_length=1024)
     deadline: Optional[datetime] = Field(default=None)
     priority: Optional[TaskPriority] = Field(default=TaskPriority.MEDIUM)
     status: Optional[TaskStatus] = Field(default=TaskStatus.TODO)
-    project_id: int = Field(foreign_key="projects.id")
+    user_id: Optional[int] = Field(default=None)
+    project_id: int = Field(index=True, foreign_key="projects.id")
 
 class TaskUpdate(SQLModel):
     new_title: Optional[str] = Field(default=None, max_length=64)
@@ -64,6 +65,7 @@ class TaskUpdate(SQLModel):
     new_deadline: Optional[datetime] = Field(default=None)
     new_priority: Optional[TaskPriority] = Field(default=TaskPriority.MEDIUM)
     new_status: Optional[TaskStatus] = Field(default=TaskStatus.TODO)
+    new_user_id: Optional[int] = Field(default=None)
     changed_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Tasks(TaskBase, table=True):
@@ -72,7 +74,7 @@ class Tasks(TaskBase, table=True):
     changed_at: Optional[datetime] = Field(default=None)
     user: Users = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
     project: Projects = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
-    
+
 
 """ Teams tables """
 class TeamRoles(StrEnum):
