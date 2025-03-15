@@ -6,10 +6,10 @@ import httpx
 """ typing imports """
 from typing import Optional, Union
 
-""" Simple router added to general  """
-router = APIRouter()
+""" APIRouter added to general  """
+router = APIRouter(prefix="/api/llm", tags=["/api/llm"])
 
-@router.get("/api/llm/")
+@router.get("/")
 async def send_api_request_to_llm(
   url_path: str, 
   json: Optional[dict] = None, 

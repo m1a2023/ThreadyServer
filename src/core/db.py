@@ -17,8 +17,8 @@ engine = create_engine(database_url, echo=True)
 async def init_database_and_tables() -> None:
   SQLModel.metadata.create_all(engine)
   
-def _get_db() -> Generator[Session, None, None]:
+def get_db() -> Generator[Session, None, None]:
   with Session(engine) as session:
     yield session
 
-SessionDep = Annotated[ Session, Depends(_get_db) ]
+SessionDep = Annotated[ Session, Depends(get_db) ]
