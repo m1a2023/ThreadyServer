@@ -7,16 +7,14 @@ import asyncio
 import uvicorn
 import uvicorn.config
 """ Internal imports """
-from api import llm, general as gen
+import api
 from core.db import init_database_and_tables
-
 
 
 """ Application starts here """
 server: fa.FastAPI = fa.FastAPI()
 
-server.include_router(router=llm.router, prefix="/api")
-server.include_router(router=gen.router, prefix="/api")
+server.include_router(router=api.router)
 
 
 """ Main function """

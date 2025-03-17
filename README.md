@@ -54,4 +54,14 @@ cd <YOUR_PROJECT_NAME>
 python src/main.py
 ```
 
-The ThreadyServer should now be up and running! 🎉
+The ThreadyServer should now be up and running!
+
+---
+
+## Using API Examples:
+
+Use Insomnia, Postman for better experience or use Browser, CURL.
+
+- GET http://localhost:9000/api/db/users/
+
+Sending GET request, returns JSON response of all users contains in DB
