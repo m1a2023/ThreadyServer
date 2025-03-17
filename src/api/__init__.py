@@ -1,11 +1,12 @@
 """ FastAPI imports """
 from fastapi import APIRouter
 """ Internal imports """
-import db, llm
+from api import database
+from api import llm
 
 
 db_router = APIRouter(prefix="/db", tags=["/db"])
-db_router.include_router(db.router)
+db_router.include_router(database.router)
 
 llm_router = APIRouter(prefix="/llm", tags=["/llm"])
 llm_router.include_router(llm.router)
