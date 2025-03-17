@@ -72,19 +72,25 @@ async def get_users_by_ids(
 
 """ CREATE """
 async def create_user(s: SessionDep, user: UserBase) -> int:
+	user = Users(**user.model_dump())
 	s.add(user)
 	s.commit()
 	s.refresh(user)
 	return user.id
 
 async def create_users(s: SessionDep, users: Union[List[UserBase], Sequence[UserBase]]) -> Sequence[int]:
-	_users: List[int] = []
+	ids: List[int] = []
+	parsed_users: List[Users] = []
+	
 	for user in users:
-		s.add(user)
-		s.commit()
+			user_obj = Users(**user.model_dump())
+			parsed_users.append(user_obj)
+	s.add_all(parsed_users)
+	s.commit()
+	for user in parsed_users:
 		s.refresh(user)
-		_users.append(user.id)
-	return _users
+		ids.append(user.id)
+	return ids
 
 """ DELETE """
 async def delete_user_by_id(s: SessionDep, id: int) -> int:
