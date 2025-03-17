@@ -17,14 +17,14 @@ from models.db_models import UserBase, Users
 router = APIRouter(prefix="/users", tags=["/users"])
 
 @router.get("/", dependencies=[Depends(get_db)], response_model=List[Users])
-async def get_all_users(s: SessionDep) -> Any:
+async def get_all_users(s: SessionDep):
 	return await gen.get_all_users(s)
 	
 @router.get("/{id}", dependencies=[Depends(get_db)], response_model=Union[int, Any])
 async def get_user_by_id(s: SessionDep, id: int):
 	user =  await gen.get_user_by_id(s, id)
 	if user is None:
-		return { "error": rf"user with id {id} doesn't exist"}
+		return { "error": rf"user with id {id} doesn't exist" }
 	return user
 
 @router.get("/bat/", dependencies=[Depends(get_db)], response_model=List[Users])
@@ -44,6 +44,11 @@ async def create_user(s: SessionDep, user: UserBase):
 
 @router.post("/bat", dependencies=[Depends(get_db)], response_model=List[int])
 async def create_users(s: SessionDep, users:  List[UserBase]):
+	"""
+ 	`users` is json body.
+  #### Example body: 
+	`[ {"id": 1, "name": "thready"}, {"id": 2, "name": "bot"} ]
+  """
 	return await gen.create_users(s, users)
 
 @router.delete("/{id}", dependencies=[Depends(get_db)], response_model=Union[int, Any])

@@ -1,6 +1,9 @@
 """ FastAPI imports """
 import fastapi as fa
 from sqlmodel import Session
+
+from services.general_service import create_project
+from models.db_models import ProjectBase
 """ asyncio imports """
 import asyncio
 """ uvicorn imports """
@@ -8,7 +11,7 @@ import uvicorn
 import uvicorn.config
 """ Internal imports """
 import api
-from core.db import init_database_and_tables
+from core.db import init_database_and_tables, engine
 
 
 """ Application starts here """
@@ -25,7 +28,7 @@ async def main() -> None:
    
 		""" Database connection here """
 		await init_database_and_tables()
-		
+
 		""" Server listening """
 		await server_.serve()
 

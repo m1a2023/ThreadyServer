@@ -109,10 +109,10 @@ async def delete_user_by_id(s: SessionDep, id: int) -> int:
 async def get_all_projects(s: SessionDep) -> Sequence[Projects]:
 	return s.exec(select(Projects)).all()
 
-async def get_all_projects_by_user(s: SessionDep, user: Users) -> Sequence[Projects]:
+async def get_projects_by_user(s: SessionDep, user: Users) -> Optional[Sequence[Projects]]:
 	return s.exec(select(Projects).where(Projects.owner_id == user.id)).all()
 
-async def get_all_projects_owner_id(s: SessionDep, owner_id: int) -> Sequence[Projects]:
+async def get_projects_by_owner_id(s: SessionDep, owner_id: int) -> Optional[Sequence[Projects]]:
 	return s.exec(select(Projects).where(Projects.owner_id == owner_id)).all()
 
 async def get_project_by_id(s: SessionDep, id: int) -> Optional[Projects]:
@@ -134,9 +134,9 @@ async def delete_project_by_id(s: SessionDep, project_id: int) -> int:
 	s.commit()
 	return project_id
 
-async def delete_projects_by_user(s: SessionDep, user: Users) -> Sequence[int]:
+async def delete_projects_by_owner_id(s: SessionDep, owner_id: int) -> Sequence[int]:
 		proj_ids: List[int]
-		query = select(Projects).where(Projects.owner_id == user.id)
+		query = select(Projects).where(Projects.owner_id == owner_id)
 		projects = s.exec(query).all()
 		proj_ids = [ proj.id for proj in projects ]
 		s.delete(projects)
@@ -144,7 +144,7 @@ async def delete_projects_by_user(s: SessionDep, user: Users) -> Sequence[int]:
 		return proj_ids 
 
 """ UPDATE """
-async def update_project_by_id(s: SessionDep, update: ProjectUpdate, project_id: int) -> int:
+async def update_project_by_id(s: SessionDep, project_id: int, update: ProjectUpdate) -> int:
 	query = select(Projects).where(Projects.id == project_id)
 	project = s.exec(query).one()
 	
