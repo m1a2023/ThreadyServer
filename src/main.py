@@ -1,6 +1,5 @@
 """ FastAPI imports """
 import fastapi as fa
-from regex import W
 from sqlmodel import Session
 """ asyncio imports """
 import asyncio
@@ -8,7 +7,7 @@ import asyncio
 import uvicorn
 import uvicorn.config
 """ Internal imports """
-from api import llm
+from api import llm, general as gen
 from core.db import init_database_and_tables
 
 
@@ -16,7 +15,8 @@ from core.db import init_database_and_tables
 """ Application starts here """
 server: fa.FastAPI = fa.FastAPI()
 
-server.include_router(router=llm.router)
+server.include_router(router=llm.router, prefix="/api")
+server.include_router(router=gen.router, prefix="/api")
 
 
 """ Main function """

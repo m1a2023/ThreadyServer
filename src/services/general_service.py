@@ -16,7 +16,8 @@ from models.db_models import (
   Tasks, TeamBase, 
   TeamRoles, 
   TeamUpdate, 
-  Teams, Users, Projects
+  Teams,
+  UserBase, Users, Projects
 )
 
 """ Util """
@@ -70,13 +71,13 @@ async def get_users_by_ids(
 	return users 
 
 """ CREATE """
-async def create_user(s: SessionDep, user: Users) -> int:
+async def create_user(s: SessionDep, user: UserBase) -> int:
 	s.add(user)
 	s.commit()
 	s.refresh(user)
 	return user.id
 
-async def create_users(s: SessionDep, users: Union[List[Users], Sequence[Users]]) -> Sequence[int]:
+async def create_users(s: SessionDep, users: Union[List[UserBase], Sequence[UserBase]]) -> Sequence[int]:
 	_users: List[int] = []
 	for user in users:
 		s.add(user)

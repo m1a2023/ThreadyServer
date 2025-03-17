@@ -11,9 +11,11 @@ from enum import StrEnum
 """ Tables start here """
 
 """ Users table """
-class Users(SQLModel, table=True):
+class UserBase(SQLModel):
 	id: int = Field(default=None, primary_key=True)
 	name: str = Field(index=True, max_length=255)
+
+class Users(UserBase, table=True):
 	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))  
 	projects: List["Projects"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	tasks: List["Tasks"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})

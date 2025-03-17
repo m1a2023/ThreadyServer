@@ -7,7 +7,7 @@ import httpx
 from typing import Optional, Union
 
 """ APIRouter added to general  """
-router = APIRouter(prefix="/api/llm", tags=["/api/llm"])
+router = APIRouter(prefix="/llm", tags=["/api/llm"])
 
 @router.get("/")
 async def send_api_request_to_llm(
