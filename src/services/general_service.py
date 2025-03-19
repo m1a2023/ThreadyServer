@@ -161,6 +161,9 @@ async def update_project_by_id(s: SessionDep, project_id: int, update: ProjectUp
 #*	Tasks table
 #* 
 """ GET """
+async def get_all_tasks(s: SessionDep) -> Sequence[Tasks]:
+	return s.exec(select(Tasks)).all()
+
 async def get_all_task_by_project_id(s: SessionDep, project_id: int) -> Sequence[Tasks]:
 	return s.exec(select(Tasks).where(Tasks.project_id == project_id)).all()
 
@@ -176,36 +179,41 @@ async def create_task(s: SessionDep, task: TaskBase) -> int:
 	return task.id
 
 async def create_tasks(s: SessionDep, tasks: Union[List[TaskBase], Sequence[TaskBase]]) -> Sequence[int]:
-	tasks = [ Tasks(**_task.model_dump()) for _task in tasks ]
-	s.add_all(tasks)
+	_tasks = [ Tasks(**_task.model_dump()) for _task in tasks ]
+	_ids: List[int] = [ ]
+	s.add_all(_tasks)
 	s.commit()
-	s.refresh(tasks)
-	return tuple( task.id for task in tasks )
+	
+	for task in _tasks:
+		s.refresh(task)	
+		_ids.append(task.id)
+	return tuple(_ids)
 
 """ UPDATE """
-async def update_task(s: SessionDep, task_id: int, upd: TaskUpdate) -> int:
+async def update_task_by_id(s: SessionDep, task_id: int, upd: TaskUpdate) -> int:
 	q = select(Tasks).where(Tasks.id == task_id)
 	task = s.exec(q).one()
 	
-	if upd.new_title is not None:
-		task.title = upd.new_title
-	if upd.new_description is not None:
-		task.description = upd.new_description
-	if upd.new_deadline is not None:
-		task.deadline = upd.new_deadline
-	if upd.new_priority is not None:
-		task.priority = upd.new_priority
-	if upd.new_status is not None:
-		task.status = upd.new_status
-	if upd.new_user_id is not None:
-		task.user_id = upd.new_user_id
+	if upd.title is not None:
+		task.title = upd.title
+	if upd.description is not None:
+		task.description = upd.description
+	if upd.deadline is not None:
+		task.deadline = upd.deadline
+	if upd.priority is not None:
+		task.priority = upd.priority
+	if upd.status is not None:
+		task.status = upd.status
+	if upd.user_id is not None:
+		task.user_id = upd.user_id
 	
+	task.changed_at = datetime.now(timezone.utc)
 	s.commit()
 	s.refresh(task)
 	return task.id
 
 """ DELETE """
-async def delete_task(s: SessionDep, task_id: int) -> int:
+async def delete_task_by_id(s: SessionDep, task_id: int) -> int:
 	q = select(Tasks).where(Tasks.id == task_id)
 	task = s.exec(q).one()
 	s.delete(task)

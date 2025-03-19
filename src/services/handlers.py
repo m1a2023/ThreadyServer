@@ -13,3 +13,4 @@ async def no_result_handler(req, exc):
 		content={"detail": "Requested resource not found"}
 	)
   
+# @server.exception_handler()

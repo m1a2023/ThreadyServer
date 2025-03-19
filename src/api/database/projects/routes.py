@@ -32,6 +32,7 @@ async def get_project_by_id(s: SessionDep, id: int):
 		project =  await gen.get_project_by_id(s, id)
 		if project is None:
 			raise HTTPException(status_code=404, detail=f"Error getting project by id {id}")
+		return project
 	except SQLAlchemyError as e :
 		raise HTTPException(status_code=500, detail=f"Error getting project by id {id}: {str(e)}")
 
@@ -51,7 +52,7 @@ async def delete_project_by_id(s: SessionDep, id: int):
 		s.rollback()
 		raise HTTPException(status_code=500, detail=f"Error deleting project by id {id}: {str(e)}")
 
-@router.delete("/owner/{id}}", dependencies=[Depends(get_db)], response_model=List[int])
+@router.delete("/owner/{id}", dependencies=[Depends(get_db)], response_model=List[int])
 async def delete_projects_by_owner_id(s: SessionDep, owner_id: int):
 	try:
 		return await gen.delete_projects_by_owner_id(s, owner_id)
