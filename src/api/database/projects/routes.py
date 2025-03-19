@@ -26,6 +26,16 @@ async def get_all_projects(s: SessionDep):
 	except SQLAlchemyError as e: 
 		raise HTTPException(status_code=500, detail=f"Error getting project: {e}")
 
+@router.get("/owner/{id}", dependencies=[Depends(get_db)], response_model=List[Projects])
+async def get_project_by_owner_id(s: SessionDep, id: int):
+	try:
+		projects = await gen.get_projects_by_owner_id(s, id)
+		if projects is None:
+			raise HTTPException(status_code=404, detail=f"Error getting projects by owner_id {id}")
+		return projects
+	except SQLAlchemyError as e:
+		raise HTTPException(status_code=500, detail=f"Error getting projects by owner_id {id}: {str(e)}")
+
 @router.get("/{id}", dependencies=[Depends(get_db)], response_model=Projects)
 async def get_project_by_id(s: SessionDep, id: int):
 	try:	

@@ -109,8 +109,8 @@ async def delete_user_by_id(s: SessionDep, id: int) -> int:
 async def get_all_projects(s: SessionDep) -> Sequence[Projects]:
 	return s.exec(select(Projects)).all()
 
-async def get_projects_by_user(s: SessionDep, user: Users) -> Optional[Sequence[Projects]]:
-	return s.exec(select(Projects).where(Projects.owner_id == user.id)).all()
+async def get_projects_by_owner_id(s: SessionDep, owner_id: int) -> Optional[Sequence[Projects]]:
+	return s.exec(select(Projects).where(Projects.owner_id == owner_id)).all()
 
 async def get_project_by_id(s: SessionDep, id: int) -> Optional[Projects]:
 	return s.exec(select(Projects).where(Projects.id == id)).first()
