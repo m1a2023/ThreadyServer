@@ -1,4 +1,5 @@
 """ SQLModel imports """
+from sqlalchemy import BigInteger, Column, ForeignKey
 from sqlmodel import Field, Relationship, SQLModel
 """ typing imports """
 from typing import Optional, List
@@ -12,7 +13,7 @@ from enum import StrEnum
 
 """ Users table """
 class UserBase(SQLModel):
-	id: int = Field(default=None, primary_key=True)
+	id: int = Field(default=None, sa_column=Column(BigInteger(), primary_key=True, autoincrement=True))
 	name: str = Field(index=True, max_length=255)
 
 class Users(UserBase, table=True):
@@ -26,7 +27,7 @@ class ProjectBase(SQLModel):
 	title: str = Field(index=True, max_length=128)
 	description: Optional[str] = Field(default=None, max_length=1024)
 	repo_link: Optional[str] = Field(default=None, max_length=256)
-	owner_id: int = Field(foreign_key="users.id")
+	owner_id: int = Field(default=None, sa_column=Column(BigInteger(), ForeignKey('users.id')))
 
 class ProjectUpdate(SQLModel):
 	title: Optional[str] = Field(default=None, max_length=128)
@@ -35,7 +36,7 @@ class ProjectUpdate(SQLModel):
 	changed_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))  
 
 class Projects(ProjectBase, table=True):
-	id: int = Field(default=None, primary_key=True)
+	id: int = Field(default=None, sa_column=Column(BigInteger(), primary_key=True, autoincrement=True))
 	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))  
 	changed_at: Optional[datetime] = Field(default=None)  
 	user: "Users" = Relationship(back_populates="projects", sa_relationship_kwargs={"lazy": "joined"})
@@ -59,8 +60,8 @@ class TaskBase(SQLModel):
 	deadline: Optional[datetime] = Field(default=None)
 	priority: Optional[TaskPriority] = Field(default=TaskPriority.MEDIUM)
 	status: Optional[TaskStatus] = Field(default=TaskStatus.TODO)
-	user_id: Optional[int] = Field(default=None, foreign_key="users.id")
-	project_id: int = Field(index=True, foreign_key="projects.id")
+	user_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger(), ForeignKey('users.id')))
+	project_id: int = Field(default=None, sa_column=Column(BigInteger(), ForeignKey('projects.id')))
 
 class TaskUpdate(SQLModel):
 	title: Optional[str] = Field(default=None, max_length=64)
@@ -68,11 +69,11 @@ class TaskUpdate(SQLModel):
 	deadline: Optional[datetime] = Field(default=None)
 	priority: Optional[TaskPriority] = Field(default=TaskPriority.MEDIUM)
 	status: Optional[TaskStatus] = Field(default=TaskStatus.TODO)
-	user_id: Optional[int] = Field(default=None)
+	user_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger(), ForeignKey('users.id')))
 	changed_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Tasks(TaskBase, table=True):
-	id: int = Field(default=None, primary_key=True)
+	id: int = Field(default=None, sa_column=Column(BigInteger(), primary_key=True, autoincrement=True))
 	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 	changed_at: Optional[datetime] = Field(default=None)
 	user: "Users" = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
@@ -85,15 +86,15 @@ class TeamRoles(StrEnum):
 	USER = "user"
 
 class TeamBase(SQLModel):
-	user_id: int = Field(foreign_key="users.id")
-	project_id: int = Field(index=True, foreign_key="projects.id")   
+	user_id: int = Field(default=None, sa_column=Column(BigInteger(), ForeignKey('users.id')))
+	project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")   
 	role: Optional[TeamRoles] = Field(default=TeamRoles.ADMIN)
 
 class TeamUpdate(SQLModel):
 	role: TeamRoles = Field(default=TeamRoles.USER)
 
 class Teams(TeamBase, table=True):
-	id: int = Field(default=None, primary_key=True)
+	id: int = Field(default=None, sa_column=Column(BigInteger(), primary_key=True, autoincrement=True))
 	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 	user: "Users" = Relationship(back_populates="team")
 	project: "Projects" = Relationship(back_populates="team")
