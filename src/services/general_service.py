@@ -1,6 +1,6 @@
 """ SQLModel imports """
 from sqlalchemy import ColumnElement
-from sqlmodel import Session, select
+from sqlmodel import Session, and_, select
 """ typing imports """
 from typing import List, Optional, Sequence, Type, TypeVar, Union
 """ datetime imports """
@@ -225,8 +225,11 @@ async def delete_task_by_id(s: SessionDep, task_id: int) -> int:
 #*	Teams table 
 #* 
 """ GET """
-async def get_team_by_project_id(s: SessionDep, project_id: int) -> Teams:
-	return s.exec(select(Teams).where(Teams.project_id == project_id)).one()
+async def get_all_teams(s: SessionDep) -> Sequence[Teams]:
+	return s.exec(select(Teams)).all()
+
+async def get_team_by_project_id(s: SessionDep, project_id: int) -> Sequence[Teams]:
+	return s.exec(select(Teams).where(Teams.project_id == project_id)).all()
 
 async def get_team_by_id(s: SessionDep, id: int) -> Teams:
 	return s.exec(select(Teams).where(Teams.id == id)).one()
@@ -249,11 +252,13 @@ async def add_user_to_team(s: SessionDep, team: TeamBase) -> int:
 
 """ UPDATE """
 async def update_team_by_(
-  s: SessionDep, project_id: Optional[int], team_id: Optional[int], upd: TeamUpdate
+	s: SessionDep, upd: TeamUpdate, 
+	user_id: Optional[int] = None, project_id: Optional[int] = None,
+	team_id: Optional[int] = None
   ) -> int:
 	q = select(Teams)
-	if project_id is not None: 
-		q = q.where(Teams.project_id == project_id)
+	if user_id is not None: 
+		q = q.where(and_(Teams.user_id == user_id, Teams.project_id == project_id))
 	if team_id is not None:
 		q = q.where(Teams.id == team_id)
 	
@@ -265,9 +270,19 @@ async def update_team_by_(
 	return team.id
 
 """ DELETE """
-async def delete_team_by_(s: SessionDep, team_id: int) -> int:
-	q = select(Teams).where(Teams.id == team_id)
-	team = s.exec(q).one()
+async def delete_team_by_(
+  s: SessionDep, 
+  user_id: Optional[int] = None, project_id: Optional[int] = None, 
+  team_id: Optional[int] = None
+  ) -> int: 
+	ret_id: int = -1
+	if user_id is not None:
+		q = select(Teams).where(and_(Teams.user_id == user_id, Teams.project_id == project_id))
+	if team_id is not None:
+		q = select(Teams).where(Teams.id == team_id)
+	team = s.exec(q).first()
+	if team is not None:
+		ret_id = team.id
 	s.delete(team)
 	s.commit()
-	return team_id
+	return ret_id

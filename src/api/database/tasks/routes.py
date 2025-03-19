@@ -26,7 +26,7 @@ async def get_all_tasks(s: SessionDep):
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error getting tasks: {str(e)}")
 
-@router.get("/bat/{id}", dependencies=[Depends(get_db)], response_model=List[Tasks])
+@router.get("/project/{id}", dependencies=[Depends(get_db)], response_model=List[Tasks])
 async def get_all_tasks_by_project_id(s: SessionDep, id: int):
 	try: 
 		tasks = await gen.get_all_task_by_project_id(s, id)
