@@ -22,15 +22,13 @@ server.include_router(router=api.router)
 
 """ Main function """
 async def main() -> None:
-		""" Server starts here """
-		server_config = uvicorn.Config(server, host="localhost", port=9000)
-		server_ = uvicorn.Server(config=server_config)
-   
-		""" Database connection here """
-		await init_database_and_tables()
-
-		""" Server listening """
-		await server_.serve()
+	""" Server starts here """
+	server_config = uvicorn.Config(server, host="localhost", port=9000)
+	server_ = uvicorn.Server(config=server_config)
+	""" Database connection here """
+	await init_database_and_tables()
+	""" Server listening """
+	await server_.serve()
 
 
 if __name__ == "__main__":

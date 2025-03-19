@@ -29,8 +29,9 @@ class ProjectBase(SQLModel):
 	owner_id: int = Field(foreign_key="users.id")
 
 class ProjectUpdate(SQLModel):
-	new_title: Optional[str] = Field(default=None, max_length=128)
-	new_description: Optional[str] = Field(default=None, max_length=1024)
+	title: Optional[str] = Field(default=None, max_length=128)
+	description: Optional[str] = Field(default=None, max_length=1024)
+	repo_link: Optional[str] = Field(default=None, max_length=256)
 	changed_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))  
 
 class Projects(ProjectBase, table=True):

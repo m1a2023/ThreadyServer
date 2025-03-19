@@ -112,9 +112,6 @@ async def get_all_projects(s: SessionDep) -> Sequence[Projects]:
 async def get_projects_by_user(s: SessionDep, user: Users) -> Optional[Sequence[Projects]]:
 	return s.exec(select(Projects).where(Projects.owner_id == user.id)).all()
 
-async def get_projects_by_owner_id(s: SessionDep, owner_id: int) -> Optional[Sequence[Projects]]:
-	return s.exec(select(Projects).where(Projects.owner_id == owner_id)).all()
-
 async def get_project_by_id(s: SessionDep, id: int) -> Optional[Projects]:
 	return s.exec(select(Projects).where(Projects.id == id)).first()
 
@@ -148,10 +145,12 @@ async def update_project_by_id(s: SessionDep, project_id: int, update: ProjectUp
 	query = select(Projects).where(Projects.id == project_id)
 	project = s.exec(query).one()
 	
-	if update.new_title is not None:
-		project.title = update.new_title
-	if update.new_description is not None: 
-		project.description = update.new_description
+	if update.title is not None:
+		project.title = update.title
+	if update.description is not None: 
+		project.description = update.description
+	if update.repo_link is not None: 
+		project.repo_link = update.repo_link
 	
 	s.commit()
 	s.refresh(project) 
