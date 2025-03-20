@@ -27,10 +27,13 @@ async def get_all_users(s: SessionDep):
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error getting users: {str(e)}")
 
-@router.get("/{id}", dependencies=[Depends(get_db)], response_model=int)
+@router.get("/{id}", dependencies=[Depends(get_db)], response_model=Optional[Users])
 async def get_user_by_id(s: SessionDep, id: int):
 	try:
-		return await gen.get_user_by_id(s, id)
+		user =  await gen.get_user_by_id(s, id)
+		if user is None:
+			raise HTTPException(status_code=404, detail=f"Error getting user by id {id}")
+		return user
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error getting user by id {id}: {str(e)}")
 
@@ -58,11 +61,12 @@ async def create_users(s: SessionDep, users: List[UserBase]):
 		ids = await gen.create_users(s, users)
 		if ids is None:
 			raise HTTPException(status_code=404, detail="Error creating users")
+		return ids
 	except SQLAlchemyError as e:
 		s.rollback()
 		raise HTTPException(status_code=500, detail=f"Error creating users: {str(e)}")
 
-@router.delete("/{id}", dependencies=[Depends(get_db)], response_model=Union[int, Any])
+@router.delete("/{id}", dependencies=[Depends(get_db)], response_model=int)
 async def delete_user_by_id(s: SessionDep, id: int):
 	try:
 		return await gen.delete_user_by_id(s, id)

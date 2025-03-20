@@ -11,14 +11,13 @@ import uvicorn
 import uvicorn.config
 """ Internal imports """
 import api
-from core.db import init_database_and_tables, engine
+from core.db import init_database_and_tables
 
 
 """ Application starts here """
 server: fa.FastAPI = fa.FastAPI()
 
 server.include_router(router=api.router)
-
 
 """ Main function """
 async def main() -> None:
@@ -32,4 +31,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+	asyncio.run(main())
