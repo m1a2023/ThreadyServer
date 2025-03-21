@@ -32,12 +32,12 @@ async def get(
 			filters: Optional[List[ColumnElement]],
 			single: bool
 		) -> Optional[Union[T, Sequence[T]]]:
-		q = select(table)
-		if filters:
-			q = q.where(*filters)
-		
-		result = s.exec(q)
-		return result.first() if single else result.all()
+	q = select(table)
+	if filters:
+		q = q.where(*filters)
+	
+	result = s.exec(q)
+	return result.first() if single else result.all()
 
 """ CREATE """
 async def create(s: SessionDep, entities: T) -> Union[T, List[T]]:
