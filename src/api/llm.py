@@ -1,13 +1,20 @@
 """ FastAPI imports """
-from fastapi import APIRouter, Request
-from fastapi.responses import StreamingResponse
+import traceback
+from fastapi import APIRouter, Body, Depends, Query, Request
+from fastapi.responses import JSONResponse, StreamingResponse
 """ httpx import """
 import httpx
 """ typing imports """
 from typing import Optional, Union
+""" Internal imports """
+from services import llm_service
+from models.llm_models import BaseRequest, CompletionOptions, Message 
+from models.db_models import PromptTitle
+from core.db import SessionDep, get_db
+
 
 """ APIRouter added to general  """
-router = APIRouter()
+router = APIRouter(prefix="/ygpt")
 
 @router.get("/")
 async def send_api_request_to_llm(
@@ -34,3 +41,31 @@ async def send_api_request_to_llm(
       response = await client.post(url=url_path, json=json, timeout=timeout)
       result = response.json()
       return result
+
+@router.post("/", dependencies=[Depends(get_db)])
+async def send_request(
+	s: SessionDep,
+	url_path: str = Query(...),
+	json: BaseRequest = Body(...)
+) -> JSONResponse:
+	_messages = [ msg.model_dump() for msg in json.messages ]
+	request = { 
+		'modelUri': json.model_uri, 
+		'completionOptions': json.options.model_dump(),
+		'messages': _messages
+	}
+	headers = { 
+		'Authorization': 'Bearer ' + json.iam_token,
+		'Content-Type' : 'application/json'
+	}
+	print('\n\n')
+	print(json.model_dump())
+	print('\n\n')
+	try:
+		response =  await llm_service.general_request(
+			s=s, url=url_path, request=request, headers=headers, action=PromptTitle.PLAN, project_id=1, context_depth=1)
+		return response
+	except Exception as e:
+		traceback_details = traceback.format_exc()
+		print(traceback_details)
+		return JSONResponse(content={ 'error' : f'{str(e)}'}, status_code=404)

@@ -42,7 +42,7 @@ class Projects(ProjectBase, table=True):
 	user: "Users" = Relationship(back_populates="projects", sa_relationship_kwargs={"lazy": "joined"})
 	tasks: List["Tasks"] = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	team: List["Teams"] = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
-	context: "Context" = Relationship(back_populates="project")
+	context: "Context" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 """ Tasks table """
 class TaskPriority(StrEnum):
@@ -102,39 +102,55 @@ class Teams(TeamBase, table=True):
  
  
 """ Context table """
-class ContextTask(SQLModel):
-	id: int 
-	title: str
-	text: str 
+# class ContextTask(SQLModel):
+# 	id: int 
+# 	title: str
+# 	text: str 
 
-class ContextPlans(SQLModel, table=True):
-	id: int = Field(foreign_key='context.id', primary_key=True)
-	text: str = Field(default=None)
-	ver: int = Field(default=1)
-	context: "Context" = Relationship(back_populates="plans")
+# class ContextPlans(SQLModel, table=True):
+# 	id: Optional[int] = Field(foreign_key='context.id', primary_key=True)
+# 	text: str = Field(default=None)
+# 	ver: int = Field(default=1)
+# 	context: "Context" = Relationship(back_populates="plans")
  
-class ContextTasks(SQLModel, table=True):
-	id: int = Field(foreign_key='context.id', primary_key=True)
-	tasks: List["ContextTask"] = Field(default=None, sa_column=Column(JSON))
-	ver: int = Field(default=1)	
-	context: "Context" = Relationship(back_populates="tasks")
+# class ContextTasks(SQLModel, table=True):
+# 	id: Optional[int] = Field(foreign_key='context.id', primary_key=True)
+# 	tasks: List["ContextTask"] = Field(default=None, sa_column=Column(JSON))
+# 	ver: int = Field(default=1)	
+# 	context: "Context" = Relationship(back_populates="tasks")
  
-class Context(SQLModel, table=True):
-	id: int = Field(default=None, primary_key=True)
-	project_id: int = Field(foreign_key='projects.id')
-	tasks: List["ContextTasks"] = Relationship(back_populates="context")
-	plans: List["ContextPlans"] = Relationship(back_populates="context")
-	project: "Projects" = Relationship(back_populates="context")
+# class Context(SQLModel, table=True):
+# 	id: Optional[int] = Field(default=None, primary_key=True)
+# 	project_id: int = Field(foreign_key='projects.id')
+# 	tasks: List["ContextTasks"] = Relationship(back_populates="context")
+# 	plans: List["ContextPlans"] = Relationship(back_populates="context")
+# 	project: "Projects" = Relationship(back_populates="context")
 
- 
-""" Prompt table """
 class PromptTitle(StrEnum):
 	SYSTEM = 'system'
 	PLAN = 'plan'
 	RE_PLAN = 're_plan'
 	TASK = 'task'
 	RE_TASK = 're_task'
+ 
+class MessageRole(StrEnum):
+	SYSTEM = 'system'
+	USER = 'user'
+	ASSISTANT = 'assistant'
 
+class ContextBase(SQLModel):
+	project_id: int = Field(foreign_key='projects.id')
+	role: MessageRole = Field(default=MessageRole.USER)
+	action: PromptTitle = Field(default=None)
+	message: str = Field(default=None)
+
+class Context(ContextBase, table=True):
+	id: Optional[int] = Field(default=None, primary_key=True)
+	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+	changed_at: Optional[datetime] = Field(default=None)
+	project: "Projects" = Relationship(back_populates="context")
+
+""" Prompt table """
 class Prompts(SQLModel, table=True):
 	id: int = Field(default=None, primary_key=True)
 	title: PromptTitle = Field(default=None, unique=True)
