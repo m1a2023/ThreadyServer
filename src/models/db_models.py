@@ -115,8 +115,7 @@ class MessageRole(StrEnum):
 	ASSISTANT = 'assistant'
 
 class ContextBase(SQLModel):
-	# project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")   
-	project_id: int = Field(foreign_key='projects.id')
+	project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")   
 	role: MessageRole = Field(default=MessageRole.USER)
 	action: PromptTitle = Field(default=None)
 	message: str = Field(default=None)
