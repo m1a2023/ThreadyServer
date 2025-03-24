@@ -63,7 +63,7 @@ async def send_request(
 	print('\n\n')
 	try:
 		response =  await llm_service.general_request(
-			s=s, url=url_path, request=request, headers=headers, action=PromptTitle.PLAN, project_id=1, context_depth=1)
+			s=s, url=url_path, request=request, headers=headers, action=PromptTitle.PLAN, project_id=1, context_depth=2)
 		return response
 	except Exception as e:
 		traceback_details = traceback.format_exc()

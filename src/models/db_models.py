@@ -102,30 +102,6 @@ class Teams(TeamBase, table=True):
  
  
 """ Context table """
-# class ContextTask(SQLModel):
-# 	id: int 
-# 	title: str
-# 	text: str 
-
-# class ContextPlans(SQLModel, table=True):
-# 	id: Optional[int] = Field(foreign_key='context.id', primary_key=True)
-# 	text: str = Field(default=None)
-# 	ver: int = Field(default=1)
-# 	context: "Context" = Relationship(back_populates="plans")
- 
-# class ContextTasks(SQLModel, table=True):
-# 	id: Optional[int] = Field(foreign_key='context.id', primary_key=True)
-# 	tasks: List["ContextTask"] = Field(default=None, sa_column=Column(JSON))
-# 	ver: int = Field(default=1)	
-# 	context: "Context" = Relationship(back_populates="tasks")
- 
-# class Context(SQLModel, table=True):
-# 	id: Optional[int] = Field(default=None, primary_key=True)
-# 	project_id: int = Field(foreign_key='projects.id')
-# 	tasks: List["ContextTasks"] = Relationship(back_populates="context")
-# 	plans: List["ContextPlans"] = Relationship(back_populates="context")
-# 	project: "Projects" = Relationship(back_populates="context")
-
 class PromptTitle(StrEnum):
 	SYSTEM = 'system'
 	PLAN = 'plan'
@@ -139,6 +115,7 @@ class MessageRole(StrEnum):
 	ASSISTANT = 'assistant'
 
 class ContextBase(SQLModel):
+	# project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")   
 	project_id: int = Field(foreign_key='projects.id')
 	role: MessageRole = Field(default=MessageRole.USER)
 	action: PromptTitle = Field(default=None)

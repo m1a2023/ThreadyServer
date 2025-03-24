@@ -1,6 +1,6 @@
 """ SQLModel imports """
 from sqlalchemy import ColumnElement
-from sqlmodel import Session, and_, select
+from sqlmodel import Session, and_, desc, select
 """ typing imports """
 from typing import List, Optional, Sequence, Type, TypeVar, Union
 """ datetime imports """
@@ -9,8 +9,12 @@ from datetime import datetime, timezone
 from core import db
 from core.db import SessionDep
 from models.db_models import (
+  Context,
+  ContextBase,
+  MessageRole,
   ProjectBase, 
-  ProjectUpdate, 
+  ProjectUpdate,
+  PromptTitle, 
   TaskBase, 
   TaskUpdate, 
   Tasks, TeamBase, 
@@ -286,3 +290,28 @@ async def delete_team_by_(
 	s.delete(team)
 	s.commit()
 	return ret_id
+
+
+#*
+#*  Context table
+#*
+async def get_context_by_project_id(
+	s: SessionDep, 
+	project_id: int,
+	action: PromptTitle,
+	context_depth: int
+) -> List[dict]:
+	""" Gets the latest messages with specified depth """
+	_context = [ ]
+	query = select(Context).where(and_(Context.project_id == project_id, Context.action == action))
+	contexts = s.exec(query.order_by(desc(Context.changed_at)).limit(context_depth)).all()
+	for context in contexts:
+		_context.append({'role': context.role, 'text': context.message})
+	return _context
+	
+async def create_context(
+	s: SessionDep,
+	context: ContextBase
+) -> None:
+	s.add(Context(**context.model_dump()))
+	s.commit()
