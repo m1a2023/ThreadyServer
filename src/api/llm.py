@@ -45,7 +45,10 @@ async def send_api_request_to_llm(
 @router.post("/", dependencies=[Depends(get_db)])
 async def send_request(
 	s: SessionDep,
-	url_path: str = Query(...),
+	url: str = Query(...),
+	action: PromptTitle = Query(...),
+	project_id: int = Query(...),
+	context_depth: int = Query(...),
 	json: BaseRequest = Body(...)
 ) -> JSONResponse:
 	_messages = [ msg.model_dump() for msg in json.messages ]
@@ -58,12 +61,16 @@ async def send_request(
 		'Authorization': 'Bearer ' + json.iam_token,
 		'Content-Type' : 'application/json'
 	}
-	print('\n\n')
-	print(json.model_dump())
-	print('\n\n')
+ 
 	try:
 		response =  await llm_service.general_request(
-			s=s, url=url_path, request=request, headers=headers, action=PromptTitle.PLAN, project_id=1, context_depth=2)
+			s=s, url=url, 
+			request=request, 
+			headers=headers, 
+			action=action, 
+			project_id=project_id, 
+			context_depth=context_depth
+		)
 		return response
 	except Exception as e:
 		traceback_details = traceback.format_exc()

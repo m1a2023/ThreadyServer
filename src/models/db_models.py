@@ -128,6 +128,6 @@ class Context(ContextBase, table=True):
 
 """ Prompt table """
 class Prompts(SQLModel, table=True):
-	id: int = Field(default=None, primary_key=True)
+	id: Optional[int] = Field(default=None, primary_key=True)
 	title: PromptTitle = Field(default=None, unique=True)
 	prompt: str = Field(default=None)
