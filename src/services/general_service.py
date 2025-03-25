@@ -302,9 +302,18 @@ async def get_context_by_project_id(
 	context_depth: int
 ) -> List[dict]:
 	""" Gets the latest messages with specified depth """
+	query = select(Context)
 	_context = [ ]
-	query = select(Context).where(and_(Context.project_id == project_id, Context.action == action))
+	
+	""" query based on needed action """
+	if query in [PromptTitle.PLAN, PromptTitle.RE_PLAN, PromptTitle.TASK]:
+		query = query.where(and_(Context.project_id == project_id, Context.action == 'plan'))
+	if query in [PromptTitle.RE_TASK, PromptTitle.DIV_TASK]:
+		query = query.where(and_(Context.project_id == project_id, Context.action == 'task'))
+	
+	""" gets context """
 	contexts = s.exec(query.order_by(desc(Context.changed_at)).limit(context_depth)).all()
+	""" building context list """
 	for context in contexts:
 		_context.append({'role': context.role, 'text': context.message})
 	return _context

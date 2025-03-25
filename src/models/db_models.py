@@ -108,6 +108,7 @@ class PromptTitle(StrEnum):
 	RE_PLAN = 're_plan'
 	TASK = 'task'
 	RE_TASK = 're_task'
+	DIV_TASK = 'div_task'
  
 class MessageRole(StrEnum):
 	SYSTEM = 'system'

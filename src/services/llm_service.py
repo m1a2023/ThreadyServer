@@ -22,36 +22,45 @@ async def general_request(
 	s: SessionDep,
 	url: str, request: Dict, headers: Dict[str, str],
 	action: PromptTitle, project_id: int,
-	context_depth: int) -> JSONResponse:
-	_prompt: str 
+	context_depth: int,
+	timeout: int) -> JSONResponse:
 	
-	""" Select needed action to exec """
+	_prompt: str 
+	description: str
+	messages = { 'messages' : [] }
 	query = select(Prompts)
+	
+	""" Get prompts """
 	sys_prompt_query = s.exec(query.where(Prompts.title == 'system')).first()
 	prompt_query = s.exec(query.where(Prompts.title == action)).first()
 	
+	""" Get project """
+	project = await gen.get_project_by_id(s, id=project_id)
+	if project and project.description:
+		description = project.description
+  
 	""" Get context if present """
 	context = await gen.get_context_by_project_id(s, project_id, action, context_depth)
-	base_msgs = request['messages']
-
+	
 	if sys_prompt_query:
 		system_prompt = { 'role': 'system', 'text': sys_prompt_query.prompt }
-		base_msgs.insert(0, system_prompt)
+		messages['messages'].append(system_prompt)
+		# base_msgs.insert(0, system_prompt)
 	if prompt_query:
-		_prompt = prompt_query.prompt
-  
-	for msg in base_msgs:
-		if msg['role'] == 'user':
-			msg['text'] = f"{_prompt}\n\n{msg['text']}"
-			""" Adding user context to db """
-			await gen.create_context(s, ContextBase(
-					project_id=project_id, role=MessageRole.USER,
-					action=action, message=msg['text'])
-				)
-	context.extend(base_msgs)
+		_prompt = prompt_query.prompt + '\n\n' + description
+		messages['messages'].append(
+			{ 'role': 'user', 'text': _prompt }
+		)
+		await gen.create_context(s, ContextBase(
+				project_id=project_id, role=MessageRole.USER,
+				action=action, message=_prompt)
+			)
+
+	context.extend(messages['messages'])
 	request['messages'] = context
+ 
 	""" Sending post request to external api """
-	async with httpx.AsyncClient(timeout=30) as client:
+	async with httpx.AsyncClient(timeout=timeout) as client:
 		response = await client.post(url=url, headers=headers, json=request)
 		""" Checking response status """
 		response.raise_for_status()

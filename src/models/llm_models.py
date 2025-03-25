@@ -14,4 +14,3 @@ class BaseRequest(BaseModel):
 	iam_token: str
 	model_uri: str
 	options: CompletionOptions
-	messages: List[Message]

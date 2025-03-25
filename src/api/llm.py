@@ -49,13 +49,12 @@ async def send_request(
 	action: PromptTitle = Query(...),
 	project_id: int = Query(...),
 	context_depth: int = Query(...),
+	timeout: int = Query(...),
 	json: BaseRequest = Body(...)
 ) -> JSONResponse:
-	_messages = [ msg.model_dump() for msg in json.messages ]
 	request = { 
 		'modelUri': json.model_uri, 
 		'completionOptions': json.options.model_dump(),
-		'messages': _messages
 	}
 	headers = { 
 		'Authorization': 'Bearer ' + json.iam_token,
@@ -69,7 +68,8 @@ async def send_request(
 			headers=headers, 
 			action=action, 
 			project_id=project_id, 
-			context_depth=context_depth
+			context_depth=context_depth,
+			timeout=timeout
 		)
 		return response
 	except Exception as e:
