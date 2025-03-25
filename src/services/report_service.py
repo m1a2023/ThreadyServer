@@ -25,9 +25,20 @@ async def is_present_by_id(s: SessionDep, table: type, id: int) -> bool:
 	return s.exec(select(table).where(table.id == id)).first() is not None
 
 """Get report on developer"""
+async def get_all_tasks_by_user_id(s: Session, user_id: int) -> Sequence[Tasks]:
+    query = select(Tasks).where(Tasks.user_id == user_id)
+    return s.exec(query).all()
 
 async def get_completed_tasks_by_user_id(s: Session, user_id: int) -> Sequence[Tasks]:
     query = select(Tasks).where(Tasks.user_id == user_id, Tasks.status == TaskStatus.DONE)
+    return s.exec(query).all()
+
+async def get_tasks_in_progress_by_user_id(s: Session, user_id: int) -> Sequence[Tasks]:
+    query = select(Tasks).where(Tasks.user_id == user_id, Tasks.status == TaskStatus.IN_PROGRESS)
+    return s.exec(query).all()
+
+async def get_todo_tasks_by_user_id(s: Session, user_id: int) -> Sequence[Tasks]:
+    query = select(Tasks).where(Tasks.user_id == user_id, Tasks.status == TaskStatus.TODO)
     return s.exec(query).all()
 
 async def get_overdue_tasks_by_user_id(s: Session, user_id: int) -> Sequence[Tasks]:
@@ -39,11 +50,13 @@ async def get_all_tasks_by_user_id(s: Session, user_id: int) -> Sequence[Tasks]:
     query = select(Tasks).where(Tasks.user_id == user_id)
     return s.exec(query).all()
 
-async def calculate_task_duration(task: Tasks) -> Optional[float]:
-    if task.status == TaskStatus.DONE and task.changed_at:
+async def calculate_task_duration(task: Tasks) -> Dict:
+    if task.status == TaskStatus.DONE:
         duration = (task.changed_at - task.created_at).total_seconds() / 3600
-        return round(duration, 2)
-    return None
+        return {"duration" : round(duration, 2), "is_done" : "true"}
+    else:
+        duration = (datetime.now() - task.created_at).total_seconds() / 3600 -2
+        return {"duration" : round(duration, 2), "is_done" : "false"}
 
 async def get_user_name_by_user_id(s: Session, user_id: int) -> str:
     query = select(Users).where(Users.id == user_id)
@@ -54,7 +67,10 @@ async def get_most_time_duration_task(tasks: List[Tasks]) -> Optional[Tasks]:
     result = None
     result_duration = 0.0
     for task in tasks:
-        task_duration = await calculate_task_duration(task)
+
+        res = await calculate_task_duration(task)
+        task_duration = res['duration']
+
         if result == None:
             result_duration = task_duration
             result = task
@@ -62,13 +78,16 @@ async def get_most_time_duration_task(tasks: List[Tasks]) -> Optional[Tasks]:
             if result_duration < task_duration:
                 result_duration = task_duration
                 result = task
-    return {result.title : result_duration}
+    return {"title" : result.title, "duration" : result_duration}
 
 async def get_least_time_duration_task(tasks: List[Tasks]) -> Dict:
     result = None
     result_duration = 0.0
     for task in tasks:
-        task_duration = await calculate_task_duration(task)
+
+        res = await calculate_task_duration(task)
+        task_duration = res['duration']
+
         if result == None:
             result_duration = task_duration
             result = task
@@ -76,35 +95,45 @@ async def get_least_time_duration_task(tasks: List[Tasks]) -> Dict:
             if result_duration > task_duration:
                 result_duration = task_duration
                 result = task
-    return {result.title : result_duration}
+    return {"title" : result.title, "duration" : result_duration}
 
 async def get_developer_report(s: Session, user_id: int) -> Dict:
     tasks = await get_completed_tasks_by_user_id(s, user_id)
     overdue_tasks = await get_overdue_tasks_by_user_id(s, user_id)
+    all_tasks = await get_all_tasks_by_user_id(s, user_id)
+    total_in_progress_tasks = await get_tasks_in_progress_by_user_id(s, user_id)
+    total_todo_tasks = await get_todo_tasks_by_user_id(s, user_id)
     developer_name = await get_user_name_by_user_id(s, user_id)
     total_time = 0.0
-    task_durations = {}
 
     dificult = await get_most_time_duration_task(tasks)
     easy = await get_least_time_duration_task(tasks)
 
+    all_users_tasks_duration = {}
+
+    tasks = await get_all_tasks_by_project_id(s, user_id)
     for task in tasks:
-        duration = await calculate_task_duration(task)
-        if duration:
-            task_durations[task.id] = duration
-            total_time += duration
+        task_info = await calculate_task_duration(task)
+        all_users_tasks_duration[task.title] = {
+            "duration": task_info['duration'],
+            "is_done": task_info['is_done']
+        }
+        total_time += task_info['duration']
 
     return {
         #еще можно разделить список просроченных задач на выолненые/невыполненые
         #и писать на сколько конкретно они просрочены
         "developer_id": user_id,
         "developer_name" : developer_name,
+        "all_tasks" : len(all_tasks),
         "total_completed_tasks": len(tasks),
+        "total_in_progress_tasks": len(total_in_progress_tasks),
+        "total_todo_tasks" : len(total_todo_tasks),
         "total_overdue_tasks" : len(overdue_tasks),
-        "compleated_task_durations": task_durations,
-        "most dificult task": dificult,
-        "the easiest task" : easy,
-        "total_hours_worked": round(total_time, 2)
+        "all_users_tasks_duration": all_users_tasks_duration,
+        "most_dificult_task": dificult,
+        "the_easiest_task" : easy,
+        "total_hours_worked": round(total_time, 2),
     }
 
 """Get report on project"""
@@ -151,7 +180,7 @@ async def get_most_productive_developer(s: Session, users: List[Users]) -> Optio
                 max_task_quantity = quantity
                 developer = user
 
-    return {developer.name : max_task_quantity}
+    return {"name" : developer.name, "quantity" : max_task_quantity}
 
 async def get_most_flawed_developer(s: Session, users: List[Users]) -> Optional[Dict]:
     max_task_quantity = 100000
@@ -167,7 +196,7 @@ async def get_most_flawed_developer(s: Session, users: List[Users]) -> Optional[
                 max_task_quantity = quantity
                 developer = user
 
-    return {developer.name : max_task_quantity}
+    return {"name" : developer.name, "quantity" : max_task_quantity}
 
 async def get_most_valuable_developer(s: Session, users: List[Users]) -> Optional[Dict]:
     if not Users:
@@ -185,7 +214,7 @@ async def get_most_valuable_developer(s: Session, users: List[Users]) -> Optiona
             max_effectiveness = effectiveness
             developer = user
 
-    return {developer.name : max_effectiveness}
+    return {"name" : developer.name, "effectiveness" : max_effectiveness}
 
 async def get_project_report(s: Session, project_id: int) -> Dict:
     project_title = await get_project_title_by_project_id(s, project_id)
@@ -200,15 +229,26 @@ async def get_project_report(s: Session, project_id: int) -> Dict:
     most_productive_developer = await get_most_productive_developer(s, users)
     most_flawed_developer = await get_most_flawed_developer(s, users)
 
+    all_tasks_in_project_with_duration = {}
+    tasks = await get_all_tasks_by_project_id(s, project_id)
+    for task in tasks:
+        task_info = await calculate_task_duration(task)
+        all_tasks_in_project_with_duration[task.title] = {
+            "duration": task_info['duration'],
+            "is_done": task_info['is_done']
+        }
+
+
     return {
         "project_id" : project_id,
         "project_title" : project_title,
         "total_quantity_of_tasks" : total_quantity_of_tasks,
-        "quantity_of_compleated_tasks" : quantity_of_compleated_tasks,
+        "quantity_of_completed_tasks" : quantity_of_compleated_tasks,
         "quantity_of_tasks_in_progress" : quantity_of_tasks_in_progress,
         "quantity_of_todo_tasks" : quantity_of_todo_tasks,
         "quantity_of_overdue_tasks" : quantity_of_overdue_tasks,
         "most_valuable_developer" : most_valuable_developer,
         "most_productive_developer" : most_productive_developer,
-        "most_flawed_developer" : most_flawed_developer
+        "most_flawed_developer" : most_flawed_developer,
+        "all_tasks_in_project_with_duration" : all_tasks_in_project_with_duration
     }
