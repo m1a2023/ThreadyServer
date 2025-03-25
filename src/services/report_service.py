@@ -111,7 +111,8 @@ async def get_developer_report(s: Session, user_id: int) -> Dict:
 
     all_users_tasks_duration = {}
 
-    tasks = await get_all_tasks_by_project_id(s, user_id)
+    tasks = await get_all_tasks_by_user_id(s, user_id)
+
     for task in tasks:
         task_info = await calculate_task_duration(task)
         all_users_tasks_duration[task.title] = {
