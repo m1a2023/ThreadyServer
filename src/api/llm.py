@@ -54,7 +54,9 @@ async def send_request(
 ) -> JSONResponse:
 	request = { 
 		'modelUri': json.model_uri, 
-		'completionOptions': json.options.model_dump(),
+		'completionOptions': (
+			CompletionOptions().model_dump(mode='json')
+		),
 	}
 	headers = { 
 		'Authorization': 'Bearer ' + json.iam_token,

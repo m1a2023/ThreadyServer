@@ -13,4 +13,7 @@ class Message(BaseModel):
 class BaseRequest(BaseModel):
 	iam_token: str
 	model_uri: str
-	options: CompletionOptions
+	# TODO 
+	# Developer count
+	# Difficulty
+	# Message for problem description in RE_PLAN

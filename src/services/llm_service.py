@@ -45,7 +45,6 @@ async def general_request(
 	if sys_prompt_query:
 		system_prompt = { 'role': 'system', 'text': sys_prompt_query.prompt }
 		messages['messages'].append(system_prompt)
-		# base_msgs.insert(0, system_prompt)
 	if prompt_query:
 		_prompt = prompt_query.prompt + '\n\n' + description
 		messages['messages'].append(
@@ -54,7 +53,7 @@ async def general_request(
 		await gen.create_context(s, ContextBase(
 				project_id=project_id, role=MessageRole.USER,
 				action=action, message=_prompt)
-			)
+		)
 
 	context.extend(messages['messages'])
 	request['messages'] = context
