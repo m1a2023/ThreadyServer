@@ -43,12 +43,11 @@ async def get_todo_tasks_by_user_id(s: Session, user_id: int) -> Sequence[Tasks]
 
 async def get_overdue_tasks_by_user_id(s: Session, user_id: int) -> Sequence[Tasks]:
     query_get_tasks = select(Tasks).where(Tasks.user_id == user_id, Tasks.status != TaskStatus.DONE and Tasks.deadline < datetime.now(timezone.utc))
-    #query_get_overdue_duration = select(Tasks.deadline)
     return s.exec(query_get_tasks).all()
 
-async def get_all_tasks_by_user_id(s: Session, user_id: int) -> Sequence[Tasks]:
-    query = select(Tasks).where(Tasks.user_id == user_id)
-    return s.exec(query).all()
+async def get_task_allotted_time(task: Tasks) -> int:
+    time = (task.deadline - task.created_at).total_seconds() / 3600
+    return time
 
 async def calculate_task_duration(task: Tasks) -> Dict:
     if task.status == TaskStatus.DONE:
@@ -64,38 +63,72 @@ async def get_user_name_by_user_id(s: Session, user_id: int) -> str:
     return user.name
 
 async def get_most_time_duration_task(tasks: List[Tasks]) -> Optional[Tasks]:
+    if not tasks:
+        return {"error": "Нет задач для анализа", "title": None, "duration": 0.0}
+
     result = None
     result_duration = 0.0
-    for task in tasks:
+    try:
+        for task in tasks:
+            res = await calculate_task_duration(task)
 
-        res = await calculate_task_duration(task)
-        task_duration = res['duration']
+            if 'duration' not in res or not isinstance(res['duration'], (int, float)):
+                continue
 
-        if result == None:
-            result_duration = task_duration
-            result = task
-        else:
-            if result_duration < task_duration:
+            task_duration = res['duration']
+
+            if result is None or task_duration > result_duration:
                 result_duration = task_duration
                 result = task
-    return {"title" : result.title, "duration" : result_duration}
+
+        if result is None:
+            return {"error": "Не удалось определить задачу", "title": None, "duration": 0.0}
+
+        return {
+            "title": result.title,
+            "duration": result_duration,
+            "error": None
+        }
+
+    except Exception as e:
+        return {
+            "error": f"Ошибка обработки: {str(e)}",
+            "title": None,
+            "duration": 0.0
+        }
 
 async def get_least_time_duration_task(tasks: List[Tasks]) -> Dict:
+    if not tasks:
+        return {"error": "Нет задач для анализа", "title": None, "duration": 0.0}
+
     result = None
     result_duration = 0.0
-    for task in tasks:
 
-        res = await calculate_task_duration(task)
-        task_duration = res['duration']
+    try:
+        for task in tasks:
+            res = await calculate_task_duration(task)
+            if 'duration' not in res or not isinstance(res['duration'], (int, float)):
+                task_duration = res['duration']
 
-        if result == None:
-            result_duration = task_duration
-            result = task
-        else:
-            if result_duration > task_duration:
+            if result is None or task_duration < result_duration:
                 result_duration = task_duration
                 result = task
-    return {"title" : result.title, "duration" : result_duration}
+
+        if result is None:
+            return {"error": "Не удалось определить задачу", "title": None, "duration": 0.0}
+
+        return {
+            "title": result.title,
+            "duration": result_duration,
+            "error": None
+        }
+
+    except Exception as e:
+        return {
+            "error": f"Ошибка обработки: {str(e)}",
+            "title": None,
+            "duration": 0.0
+        }
 
 async def get_developer_report(s: Session, user_id: int) -> Dict:
     tasks = await get_completed_tasks_by_user_id(s, user_id)
@@ -117,13 +150,12 @@ async def get_developer_report(s: Session, user_id: int) -> Dict:
         task_info = await calculate_task_duration(task)
         all_users_tasks_duration[task.title] = {
             "duration": task_info['duration'],
-            "is_done": task_info['is_done']
+            "is_done": task_info['is_done'],
+            "allotted_time" : await get_task_allotted_time(task)
         }
         total_time += task_info['duration']
 
     return {
-        #еще можно разделить список просроченных задач на выолненые/невыполненые
-        #и писать на сколько конкретно они просрочены
         "developer_id": user_id,
         "developer_name" : developer_name,
         "all_tasks" : len(all_tasks),
@@ -172,7 +204,7 @@ async def get_most_productive_developer(s: Session, users: List[Users]) -> Optio
     developer = None
 
     if users is None:
-        return None
+        return {"name": "Нет разработчиков", "quantity": 0}
     else:
         for user in users:
             quantity = len(await get_completed_tasks_by_user_id(s, user.id))
@@ -181,6 +213,9 @@ async def get_most_productive_developer(s: Session, users: List[Users]) -> Optio
                 max_task_quantity = quantity
                 developer = user
 
+    if developer == None:
+        return {"name": "Не определено", "quantity": 0}
+
     return {"name" : developer.name, "quantity" : max_task_quantity}
 
 async def get_most_flawed_developer(s: Session, users: List[Users]) -> Optional[Dict]:
@@ -188,7 +223,7 @@ async def get_most_flawed_developer(s: Session, users: List[Users]) -> Optional[
     developer = None
 
     if users is None:
-        return None
+        return {"name": "Нет разработчиков", "quantity": 0}
     else:
         for user in users:
             quantity = len(await get_overdue_tasks_by_user_id(s, user.id))
@@ -196,6 +231,9 @@ async def get_most_flawed_developer(s: Session, users: List[Users]) -> Optional[
             if quantity < max_task_quantity:
                 max_task_quantity = quantity
                 developer = user
+
+    if developer == None:
+        return {"name": "Не определено", "quantity": 0}
 
     return {"name" : developer.name, "quantity" : max_task_quantity}
 
@@ -205,15 +243,24 @@ async def get_most_valuable_developer(s: Session, users: List[Users]) -> Optiona
 
     max_effectiveness = 0
     developer = None
+    has_valid_developers = False
 
     for user in users:
         overdue_quantity = len(await get_overdue_tasks_by_user_id(s, user.id))
         quantity = len(await get_all_tasks_by_user_id(s, user.id))
+
+        if quantity == 0:
+            continue
+
         effectiveness = 100 - ((overdue_quantity/quantity) * 100)
+        has_valid_developers = True
 
         if max_effectiveness <= effectiveness:
             max_effectiveness = effectiveness
             developer = user
+
+    if not has_valid_developers or developer is None:
+        return {"name": "Не определено", "effectiveness": 0}
 
     return {"name" : developer.name, "effectiveness" : max_effectiveness}
 
@@ -226,6 +273,7 @@ async def get_project_report(s: Session, project_id: int) -> Dict:
     quantity_of_overdue_tasks = len(await get_overdue_tasks_by_project_id(s, project_id))
 
     users = await get_developers_by_project_id(s, project_id)
+    print(users)
     most_valuable_developer = await get_most_valuable_developer(s, users)
     most_productive_developer = await get_most_productive_developer(s, users)
     most_flawed_developer = await get_most_flawed_developer(s, users)
@@ -236,7 +284,8 @@ async def get_project_report(s: Session, project_id: int) -> Dict:
         task_info = await calculate_task_duration(task)
         all_tasks_in_project_with_duration[task.title] = {
             "duration": task_info['duration'],
-            "is_done": task_info['is_done']
+            "is_done": task_info['is_done'],
+            "allotted_time" : await get_task_allotted_time(task)
         }
 
 
