@@ -1,10 +1,11 @@
+from enum import StrEnum
 from typing import List, Optional
 from pydantic import BaseModel
 
 class CompletionOptions(BaseModel):
 	stream: bool = False	
 	temperature: float = 0.9
-	max_tokens: int = 1000
+	max_tokens: int = 2000
 
 class Message(BaseModel):
 	role: str
@@ -13,7 +14,9 @@ class Message(BaseModel):
 class BaseRequest(BaseModel):
 	iam_token: str
 	model_uri: str
-	# TODO 
-	# Developer count
-	# Difficulty
-	# Message for problem description in RE_PLAN
+ 
+class ProblemRequest(BaseRequest):
+	problem: str
+
+class OptionsRequest(BaseRequest):
+	options: CompletionOptions

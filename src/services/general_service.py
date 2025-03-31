@@ -306,9 +306,9 @@ async def get_context_by_project_id(
 	_context = [ ]
 	
 	""" query based on needed action """
-	if query in [PromptTitle.PLAN, PromptTitle.RE_PLAN, PromptTitle.TASK]:
+	if action in [PromptTitle.PLAN, PromptTitle.RE_PLAN, PromptTitle.TASK]:
 		query = query.where(and_(Context.project_id == project_id, Context.action == 'plan'))
-	if query in [PromptTitle.RE_TASK, PromptTitle.DIV_TASK]:
+	if action in [PromptTitle.RE_TASK, PromptTitle.DIV_TASK]:
 		query = query.where(and_(Context.project_id == project_id, Context.action == 'task'))
 	
 	""" gets context """

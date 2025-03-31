@@ -8,7 +8,7 @@ import httpx
 from typing import Optional, Union
 """ Internal imports """
 from services import llm_service
-from models.llm_models import BaseRequest, CompletionOptions, Message 
+from models.llm_models import BaseRequest, CompletionOptions, Message, OptionsRequest, ProblemRequest 
 from models.db_models import PromptTitle
 from core.db import SessionDep, get_db
 
@@ -50,19 +50,25 @@ async def send_request(
 	project_id: int = Query(...),
 	context_depth: int = Query(...),
 	timeout: int = Query(...),
-	json: BaseRequest = Body(...)
+	json: BaseRequest | ProblemRequest | OptionsRequest = Body(...)
 ) -> JSONResponse:
 	request = { 
-		'modelUri': json.model_uri, 
-		'completionOptions': (
-			CompletionOptions().model_dump(mode='json')
-		),
+		'modelUri': json.model_uri,
+		'completionOptions': CompletionOptions().model_dump()
 	}
+	if isinstance(json, OptionsRequest):
+		request['completionOptions'] = json.options
+	
 	headers = { 
 		'Authorization': 'Bearer ' + json.iam_token,
 		'Content-Type' : 'application/json'
 	}
  
+	if isinstance(json, ProblemRequest):
+		request.update({
+			'problem': json.problem
+		})
+  
 	try:
 		response =  await llm_service.general_request(
 			s=s, url=url, 

@@ -25,8 +25,10 @@ async def general_request(
 	context_depth: int,
 	timeout: int) -> JSONResponse:
 	
-	_prompt: str 
+	text: str 
 	description: str
+	options: Dict
+	problem: str
 	messages = { 'messages' : [] }
 	query = select(Prompts)
 	
@@ -37,8 +39,8 @@ async def general_request(
 	""" Get project """
 	project = await gen.get_project_by_id(s, id=project_id)
 	if project and project.description:
-		description = project.description
-  
+		description = project.description	
+	
 	""" Get context if present """
 	context = await gen.get_context_by_project_id(s, project_id, action, context_depth)
 	
@@ -46,13 +48,15 @@ async def general_request(
 		system_prompt = { 'role': 'system', 'text': sys_prompt_query.prompt }
 		messages['messages'].append(system_prompt)
 	if prompt_query:
-		_prompt = prompt_query.prompt + '\n\n' + description
+		text = prompt_query.prompt + '\n\n' + description
+		if 'problem' in request.keys():
+			text += "\nProblem description: " + request['problem']
 		messages['messages'].append(
-			{ 'role': 'user', 'text': _prompt }
+			{ 'role': 'user', 'text': text }
 		)
 		await gen.create_context(s, ContextBase(
 				project_id=project_id, role=MessageRole.USER,
-				action=action, message=_prompt)
+				action=action, message=text)
 		)
 
 	context.extend(messages['messages'])
