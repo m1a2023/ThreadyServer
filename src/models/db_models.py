@@ -43,6 +43,7 @@ class Projects(ProjectBase, table=True):
 	tasks: List["Tasks"] = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	team: List["Teams"] = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	context: "Context" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+	plans: "Plans" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 """ Tasks table """
 class TaskPriority(StrEnum):
@@ -132,3 +133,14 @@ class Prompts(SQLModel, table=True):
 	id: Optional[int] = Field(default=None, primary_key=True)
 	title: PromptTitle = Field(default=None, unique=True)
 	prompt: str = Field(default=None)
+ 
+ 
+""" Plan table """
+class PlanBase(SQLModel):
+	text: str = Field(default=None)
+	project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")
+
+class Plans(PlanBase, table=True):
+	id: int = Field(default=None, primary_key=True)
+	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+	project: "Projects" = Relationship(back_populates='plans')

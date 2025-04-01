@@ -9,14 +9,14 @@ from sqlmodel import and_, desc, select
 import httpx
 """ typing imports """
 from typing import Any, Dict, List, Optional, Union
-""" Thread imports """
-import threading as thread
-""" asyncio imports """
-import asyncio
 """ Internal imports """
 from core.db import SessionDep
 from services import general_service as gen
-from models.db_models import Context, ContextBase, MessageRole, PromptTitle, Prompts
+from models.db_models import Context, ContextBase, MessageRole, PlanBase, PromptTitle, Prompts, TaskBase, Tasks
+  
+import json
+import re
+
 
 async def general_request(
 	s: SessionDep,
@@ -47,13 +47,14 @@ async def general_request(
 	if sys_prompt_query:
 		system_prompt = { 'role': 'system', 'text': sys_prompt_query.prompt }
 		messages['messages'].append(system_prompt)
+  
 	if prompt_query:
 		text = prompt_query.prompt + '\n\n' + description
 		if 'problem' in request.keys():
 			text += "\nProblem description: " + request['problem']
-		messages['messages'].append(
-			{ 'role': 'user', 'text': text }
-		)
+		
+		messages['messages'].append({ 'role': 'user', 'text': text })
+  
 		await gen.create_context(s, ContextBase(
 				project_id=project_id, role=MessageRole.USER,
 				action=action, message=text)
@@ -77,4 +78,29 @@ async def general_request(
 				project_id=project_id, role=MessageRole.ASSISTANT,
 				action=action, message=message)
 			)
+			# await _match_action_and_create(s, project_id, action, message)
 		return response.json()
+
+
+
+# TODO 
+# async def _match_action_and_create(
+# 	s: SessionDep,
+# 	project_id: int,
+# 	action: PromptTitle,
+# 	text: str) -> None:
+# 	if action in [PromptTitle.PLAN, PromptTitle.RE_PLAN]:
+# 		plan = PlanBase(project_id=project_id, text=text)
+# 		await gen.create_plan(s, plan)
+# 		return
+# 	if action in [PromptTitle.TASK, PromptTitle.RE_TASK]:
+# 		tasks: List[TaskBase] = build_tasks(response=text)
+# 		print("\n\n"+ text + "\n")
+# 		print(tasks)
+# 		print("\n\n")
+# 		await gen.create_tasks(s, tasks)
+# 		return 
+# 	if action in [PromptTitle.DIV_TASK]:
+# 		return
+
+
