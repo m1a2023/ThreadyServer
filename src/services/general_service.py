@@ -1,6 +1,8 @@
 """ SQLModel imports """
+from enum import StrEnum
 from sqlalchemy import ColumnElement
-from sqlmodel import Session, and_, desc, select
+from sqlmodel import Session, and_, asc, desc, select
+from sympy import ExactQuotientFailed
 """ typing imports """
 from typing import List, Optional, Sequence, Type, TypeVar, Union
 """ datetime imports """
@@ -12,6 +14,8 @@ from models.db_models import (
   Context,
   ContextBase,
   MessageRole,
+  PlanBase,
+  Plans,
   ProjectBase, 
   ProjectUpdate,
   PromptTitle, 
@@ -27,6 +31,11 @@ from models.db_models import (
 """ Util """
 async def is_present_by_id(s: SessionDep, table: type, id: int) -> bool:
 	return s.exec(select(table).where(table.id == id)).first() is not None
+
+class SortBy(StrEnum):
+	LATEST = 'latest'
+	NONE = 'none'
+	OLDER = 'older'
 
 """ GET """
 T = TypeVar("T")
@@ -198,18 +207,10 @@ async def update_task_by_id(s: SessionDep, task_id: int, upd: TaskUpdate) -> int
 	q = select(Tasks).where(Tasks.id == task_id)
 	task = s.exec(q).one()
 	
-	if upd.title is not None:
-		task.title = upd.title
-	if upd.description is not None:
-		task.description = upd.description
-	if upd.deadline is not None:
-		task.deadline = upd.deadline
-	if upd.priority is not None:
-		task.priority = upd.priority
-	if upd.status is not None:
-		task.status = upd.status
-	if upd.user_id is not None:
-		task.user_id = upd.user_id
+	update_data = upd.model_dump(exclude_unset=True)
+	
+	for field, value in update_data.items():
+		setattr(task, field, value)
 	
 	task.changed_at = datetime.now(timezone.utc)
 	s.commit()
@@ -295,6 +296,7 @@ async def delete_team_by_(
 #*
 #*  Context table
 #*
+""" GET """
 async def get_context_by_project_id(
 	s: SessionDep, 
 	project_id: int,
@@ -318,9 +320,49 @@ async def get_context_by_project_id(
 		_context.append({'role': context.role, 'text': context.message})
 	return _context
 	
+ 
+""" CREATE """
 async def create_context(
 	s: SessionDep,
 	context: ContextBase
-) -> None:
-	s.add(Context(**context.model_dump()))
+) -> int:
+	_context = Context(**context.model_dump())
+	s.add(_context)
 	s.commit()
+	s.refresh(_context)
+	return _context.project_id
+ 
+#*
+#*	Plan table
+#*
+""" GET """
+async def get_plans_by_project_id(
+	s: SessionDep,
+	project_id: int,
+	sort: Optional[SortBy] = SortBy.LATEST,
+	limit: Optional[int] = 3
+) -> Sequence[Plans]:	
+	q = (select(Plans)
+			.where(Plans.project_id == project_id))
+	if limit:
+		q = q.limit(limit)
+	
+	match sort:
+		case SortBy.LATEST: 
+			q = q.order_by(desc(Plans.created_at))
+		case SortBy.OLDER: 
+			q = q.order_by(asc(Plans.created_at))
+			
+	plans = s.exec(q).all()
+	return plans
+
+""" CREATE """
+async def create_plan(
+	s: SessionDep,
+	plan: PlanBase
+) -> int:
+	plan = Plans(**plan.model_dump())
+	s.add(plan)
+	s.commit()
+	s.refresh(plan)
+	return plan.id
