@@ -1,7 +1,7 @@
 """ SQLModel imports """
 from enum import StrEnum
 from sqlalchemy import ColumnElement
-from sqlmodel import Session, and_, asc, desc, select
+from sqlmodel import Session, and_, asc, between, desc, select, col
 from sympy import ExactQuotientFailed
 """ typing imports """
 from typing import List, Optional, Sequence, Type, TypeVar, Union
@@ -127,6 +127,20 @@ async def get_projects_by_owner_id(s: SessionDep, owner_id: int) -> Optional[Seq
 
 async def get_project_by_id(s: SessionDep, id: int) -> Optional[Projects]:
 	return s.exec(select(Projects).where(Projects.id == id)).first()
+
+async def get_projects_by_user_id(s: SessionDep, id: int) -> Sequence[Projects]:
+	q = select(Teams).where(Teams.user_id == id)
+	teams = s.exec(q).all()
+ 
+	_ids = [ ]
+	for team in teams:
+		_ids.append(team.project_id)
+  
+	q = select(Projects)
+	projects = s.exec(q.where(col(Projects.id).in_(_ids))).all()
+  
+	return projects
+
 
 """ CREATE """
 async def create_project(s: SessionDep, project: ProjectBase) -> int:

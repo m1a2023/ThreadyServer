@@ -1,4 +1,5 @@
 """ FastAPI imports """
+from re import A
 import traceback
 from fastapi import APIRouter, Body, Depends, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -52,13 +53,21 @@ async def send_request(
 	timeout: int = Query(...),
 	json: BaseRequest | ProblemRequest | OptionsRequest = Body(...)
 ) -> JSONResponse:
+	""" Sends request to ygpt """
+	
+	""" Building a request """
 	request = { 
 		'modelUri': json.model_uri,
 		'completionOptions': CompletionOptions().model_dump()
 	}
+	
 	if isinstance(json, OptionsRequest):
 		request['completionOptions'] = json.options
-	
+		
+	if action in [PromptTitle.TASK, PromptTitle.DIV_TASK, PromptTitle.RE_TASK]:
+		request['jsonObject'] = True
+		request['jsonSchema'] = { "schema": { "taskN": "description" }}
+
 	headers = { 
 		'Authorization': 'Bearer ' + json.iam_token,
 		'Content-Type' : 'application/json'

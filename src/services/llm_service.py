@@ -27,8 +27,6 @@ async def general_request(
 	
 	text: str 
 	description: str
-	options: Dict
-	problem: str
 	messages = { 'messages' : [] }
 	query = select(Prompts)
 	
@@ -78,29 +76,49 @@ async def general_request(
 				project_id=project_id, role=MessageRole.ASSISTANT,
 				action=action, message=message)
 			)
-			# await _match_action_and_create(s, project_id, action, message)
+			await _match_action_and_create(s, project_id, action, message)
 		return response.json()
 
 
+async def _match_action_and_create(
+	s: SessionDep,
+	project_id: int,
+	action: PromptTitle,
+	text: str) -> None:
+  
+	if action in [PromptTitle.PLAN, PromptTitle.RE_PLAN]:
+		plan = PlanBase(project_id=project_id, text=text)
+		await gen.create_plan(s, plan)
+  
+	if action in [PromptTitle.TASK, PromptTitle.RE_TASK]:
+		built = _build_tasks(response=text)
+		parsed = _parse_tasks(built, project_id)
+		tasks = [ 
+			Tasks(**task.model_dump()) for task in parsed
+		]
+		await gen.create_tasks(s, tasks)
+  
+	if action in [PromptTitle.DIV_TASK]:
+		return
 
-# TODO 
-# async def _match_action_and_create(
-# 	s: SessionDep,
-# 	project_id: int,
-# 	action: PromptTitle,
-# 	text: str) -> None:
-# 	if action in [PromptTitle.PLAN, PromptTitle.RE_PLAN]:
-# 		plan = PlanBase(project_id=project_id, text=text)
-# 		await gen.create_plan(s, plan)
-# 		return
-# 	if action in [PromptTitle.TASK, PromptTitle.RE_TASK]:
-# 		tasks: List[TaskBase] = build_tasks(response=text)
-# 		print("\n\n"+ text + "\n")
-# 		print(tasks)
-# 		print("\n\n")
-# 		await gen.create_tasks(s, tasks)
-# 		return 
-# 	if action in [PromptTitle.DIV_TASK]:
-# 		return
 
+def _build_tasks(response: str) -> Dict:
+	try:
+		print(response)
+		data = json.loads(response)
+		return data
+	except json.JSONDecodeError:
+		print("Error: Invalid JSON format.")
+		return { "error": "Couldn't be parsed"}
 
+def _parse_tasks(tasks: Dict, project_id: int) -> List[TaskBase]:
+	parsed_tasks = []
+	for task in tasks['tasks']:
+		for task_name, task_desc in task.items():
+			_task = TaskBase(
+				title="task_"+task_name, 
+				description=task_desc,
+				project_id=project_id
+			)
+			parsed_tasks.append(_task)
+	return parsed_tasks

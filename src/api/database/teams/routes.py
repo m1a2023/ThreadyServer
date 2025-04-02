@@ -44,16 +44,18 @@ async def get_team_by_id(s: SessionDep, id: int):
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error getting team by id {id}: {str(e)}")
 
-@router.post("/", dependencies=[Depends(get_db)], response_model=int)
-async def create_team(s: SessionDep, team: TeamBase):
+@router.post("/owner/{owner_id}/project/{project_id}", dependencies=[Depends(get_db)], response_model=int)
+async def create_team(s: SessionDep, owner_id: int, project_id: int):
 	try:
+		team = TeamBase(user_id=owner_id, project_id=project_id)
 		return await gen.create_team(s, team)
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error creating team: {str(e)}")
 
-@router.post("/user", dependencies=[Depends(get_db)], response_model=int)
-async def add_user_to_team(s: SessionDep, team: TeamBase):
+@router.post("/user/{user_id}/project/{project_id}", dependencies=[Depends(get_db)], response_model=int)
+async def add_user_to_team(s: SessionDep, user_id: int, project_id: int):
 	try:
+		team = TeamBase(user_id=user_id, project_id=project_id)
 		return await gen.add_user_to_team(s, team)
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error creating teams: {str(e)}")
