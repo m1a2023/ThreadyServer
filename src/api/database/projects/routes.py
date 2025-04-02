@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Union
 """ Internal imports """
 from core.db import SessionDep, get_db
 from services import general_service as gen
-from models.db_models import ProjectBase, ProjectUpdate, Projects
+from models.db_models import ProjectBase, ProjectUpdate, Projects, TeamBase
 
 
 """ APIRouter added to upper router(db/__init__.py) """
@@ -30,12 +30,18 @@ async def get_all_projects(s: SessionDep):
 async def get_project_by_owner_id(s: SessionDep, id: int):
 	try:
 		projects = await gen.get_projects_by_owner_id(s, id)
-		if projects is None:
-			raise HTTPException(status_code=404, detail=f"Error getting projects by owner_id {id}")
 		return projects
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error getting projects by owner_id {id}: {str(e)}")
 
+@router.get("/bat/user/{id}", dependencies=[Depends(get_db)], response_model=List[Projects])
+async def get_projects_by_user_id(s: SessionDep, id: int):
+	try:
+		projects = await gen.get_projects_by_user_id(s, id)
+		return projects
+	except SQLAlchemyError as e:
+		raise HTTPException(status_code=500, detail=f"Error getting projects by user_id {id}: {str(e)}")
+ 
 @router.get("/{id}", dependencies=[Depends(get_db)], response_model=Projects)
 async def get_project_by_id(s: SessionDep, id: int):
 	try:	
@@ -49,7 +55,9 @@ async def get_project_by_id(s: SessionDep, id: int):
 @router.post("/", dependencies=[Depends(get_db)], response_model=int)
 async def create_project(s: SessionDep, project: ProjectBase):
 	try: 
-		return await gen.create_project(s, project)
+		project_id = await gen.create_project(s, project)
+		await gen.create_team(s, TeamBase(user_id=project.owner_id, project_id=project_id))
+		return project_id
 	except SQLAlchemyError as e:
 		s.rollback()
 		raise HTTPException(status_code=500, detail=f"Error creating project: {str(e)}")

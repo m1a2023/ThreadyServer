@@ -5,7 +5,7 @@ from pydantic import BaseModel
 class CompletionOptions(BaseModel):
 	stream: bool = False	
 	temperature: float = 0.9
-	max_tokens: int = 2000
+	max_tokens: int = 5000
 
 class Message(BaseModel):
 	role: str
