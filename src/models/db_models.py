@@ -155,15 +155,14 @@ class Plans(PlanBase, table=True):
 class ReminderBase(SQLModel):
 	task_id: int = Field(index=True, sa_type=BigInteger, foreign_key="tasks.id")
 	title: str = Field(default=None)
-	send_time: Optional[datetime] = Field(default=None) #под вопросом
+	send_time: Optional[datetime] = Field(default=None)
 	user_id: int = Field(index=True, sa_type=BigInteger, foreign_key="users.id")
 	project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")
 
 class ReminderUpdate(SQLModel):
 	title: Optional[str] = Field(default=None)
-	send_time: Optional[datetime] = Field(default=None) #под вопросом
+	send_time: Optional[datetime] = Field(default=None)
 	user_id: Optional[int] = Field(index=True, sa_type=BigInteger, foreign_key="users.id")
-	project_id: Optional[int] = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")
 
 class Reminders(ReminderBase, table=True):
 	id:int = Field(default=None, sa_column=Column(BigInteger(), primary_key=True, autoincrement=True))

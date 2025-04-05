@@ -386,6 +386,9 @@ async def create_plan(
 #* Reminders table
 #*
 
+async def get_all_reminders(s: SessionDep) -> Sequence[Reminders]:
+	return s.exec(select(Reminders)).all()
+
 async def create_remider(s: SessionDep, reminder: ReminderBase) -> int:
 	reminder = Reminders(**reminder.model_dump())
 	s.add(reminder)

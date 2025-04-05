@@ -47,10 +47,12 @@ async def get_task_by_id(s: SessionDep, id: int):
 		raise HTTPException(status_code=500, detail=f"Erorr getting tasks by project_id {id}: {str(e)}")
 
 @router.post("/", dependencies=[Depends(get_db)], response_model=int)
-async def create_task(s: SessionDep, task: TaskBase, reminder: ReminderBase):
+async def create_task(s: SessionDep, task: TaskBase):
 	try:
-		await gen.create_remider(s, reminder)
-		return await gen.create_task(s, task)
+		id_task = await gen.create_task(s, task)
+		remind = ReminderBase(title = task.title, send_time=task.deadline, user_id=task.user_id, project_id=task.project_id, task_id=id_task)
+		await gen.create_remider(s, remind)
+		return id_task
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error creating task: {str(e)}")
 
@@ -65,10 +67,11 @@ async def create_tasks(s: SessionDep, tasks: List[TaskBase]):
 		raise HTTPException(status_code=500, detail=f"Error creating tasks: {str(e)}")
 
 @router.put("/{id}", dependencies=[Depends(get_db)], response_model=int)
-async def update_task_by_id(s: SessionDep, id: int, updTask: TaskUpdate, updReminder: ReminderUpdate):
+async def update_task_by_id(s: SessionDep, id: int, upd: TaskUpdate):
 	try:
-		await gen.update_reminder_by_task_id(s, id, updReminder)
-		return await gen.update_task_by_id(s, id, updTask)
+		updRemind = ReminderUpdate(title=upd.title, send_time=upd.deadline, user_id=upd.user_id)
+		await gen.update_reminder_by_task_id(s, id, updRemind)
+		return await gen.update_task_by_id(s, id, upd)
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error updating task by id {id}: {str(e)}")
 
