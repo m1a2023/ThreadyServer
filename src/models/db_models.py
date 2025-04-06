@@ -21,7 +21,7 @@ class Users(UserBase, table=True):
 	projects: List["Projects"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	tasks: List["Tasks"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	team: List["Teams"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
-	reminder: "Reminders" = Relationship(back_populates="tasks", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+	reminder: "Reminders" = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 
 """ Projects table """
@@ -46,7 +46,7 @@ class Projects(ProjectBase, table=True):
 	team: List["Teams"] = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	context: "Context" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	plans: "Plans" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
-	reminder: "Reminders" = Relationship(back_populates="tasks", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+	reminder: "Reminders" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 
 """ Tasks table """
@@ -84,8 +84,7 @@ class Tasks(TaskBase, table=True):
 	changed_at: Optional[datetime] = Field(default=None)
 	user: "Users" = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
 	project: "Projects" = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
-	reminder: "Reminders" = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
-
+	reminder: "Reminders" = Relationship(back_populates="task", sa_relationship_kwargs={"lazy": "joined"})
 
 """ Teams tables """
 class TeamRoles(StrEnum):
