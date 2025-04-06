@@ -17,10 +17,11 @@ class UserBase(SQLModel):
 	name: str = Field(index=True, max_length=255)
 
 class Users(UserBase, table=True):
-	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))  
+	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 	projects: List["Projects"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	tasks: List["Tasks"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	team: List["Teams"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+
 
 """ Projects table """
 class ProjectBase(SQLModel):
@@ -33,17 +34,19 @@ class ProjectUpdate(SQLModel):
 	title: Optional[str] = Field(default=None, max_length=128)
 	description: Optional[str] = Field(default=None, max_length=1024)
 	repo_link: Optional[str] = Field(default=None, max_length=256)
-	changed_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))  
+	changed_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Projects(ProjectBase, table=True):
 	id: int = Field(default=None, sa_column=Column(BigInteger(), primary_key=True, autoincrement=True))
-	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))  
-	changed_at: Optional[datetime] = Field(default=None)  
+	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+	changed_at: Optional[datetime] = Field(default=None)
 	user: "Users" = Relationship(back_populates="projects", sa_relationship_kwargs={"lazy": "joined"})
 	tasks: List["Tasks"] = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	team: List["Teams"] = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	context: "Context" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	plans: "Plans" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+	# reminder: "Reminders" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+
 
 """ Tasks table """
 class TaskPriority(StrEnum):
@@ -80,16 +83,16 @@ class Tasks(TaskBase, table=True):
 	changed_at: Optional[datetime] = Field(default=None)
 	user: "Users" = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
 	project: "Projects" = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
-
+	# reminder: "Reminders" = Relationship(back_populates="task", sa_relationship_kwargs={"lazy": "joined"})
 
 """ Teams tables """
 class TeamRoles(StrEnum):
-	ADMIN = "admin" 
+	ADMIN = "admin"
 	USER = "user"
 
 class TeamBase(SQLModel):
 	user_id: int = Field(default=None, sa_column=Column(BigInteger(), ForeignKey('users.id')))
-	project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")   
+	project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")
 	role: Optional[TeamRoles] = Field(default=TeamRoles.ADMIN)
 
 class TeamUpdate(SQLModel):
@@ -100,8 +103,8 @@ class Teams(TeamBase, table=True):
 	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 	user: "Users" = Relationship(back_populates="team")
 	project: "Projects" = Relationship(back_populates="team")
- 
- 
+
+
 """ Context table """
 class PromptTitle(StrEnum):
 	SYSTEM = 'system'
@@ -110,14 +113,14 @@ class PromptTitle(StrEnum):
 	TASK = 'task'
 	RE_TASK = 're_task'
 	DIV_TASK = 'div_task'
- 
+
 class MessageRole(StrEnum):
 	SYSTEM = 'system'
 	USER = 'user'
 	ASSISTANT = 'assistant'
 
 class ContextBase(SQLModel):
-	project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")   
+	project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")
 	role: MessageRole = Field(default=MessageRole.USER)
 	action: PromptTitle = Field(default=None)
 	message: str = Field(default=None)
@@ -133,8 +136,8 @@ class Prompts(SQLModel, table=True):
 	id: Optional[int] = Field(default=None, primary_key=True)
 	title: PromptTitle = Field(default=None, unique=True)
 	prompt: str = Field(default=None)
- 
- 
+
+
 """ Plan table """
 class PlanBase(SQLModel):
 	text: str = Field(default=None)
@@ -144,3 +147,20 @@ class Plans(PlanBase, table=True):
 	id: int = Field(default=None, primary_key=True)
 	created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 	project: "Projects" = Relationship(back_populates='plans')
+
+
+""" Reminders table """
+class ReminderBase(SQLModel):
+	task_id: int = Field(index=True, sa_type=BigInteger, foreign_key="tasks.id", primary_key=True)
+	title: str = Field(default=None)
+	send_time: Optional[datetime] = Field(default=None)
+	project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")
+
+class ReminderUpdate(SQLModel):
+	title: Optional[str] = Field(default=None)
+	send_time: Optional[datetime] = Field(default=None)
+	user_id: Optional[int] = Field(index=True, sa_type=BigInteger, foreign_key="users.id")
+
+class Reminders(ReminderBase, table=True):
+	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
+	changed_at: Optional[datetime] = Field(default=None)
