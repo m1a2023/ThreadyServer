@@ -396,7 +396,7 @@ async def create_remider(s: SessionDep, reminder: ReminderBase) -> int:
 	s.add(reminder)
 	s.commit()
 	s.refresh(reminder)
-	return reminder.id
+	return reminder.task_id
 
 async def update_reminder_by_task_id(s: SessionDep, task_id: int, upd: ReminderUpdate) -> int:
 	q = select(Reminders).where(Reminders.task_id == task_id)
@@ -410,7 +410,7 @@ async def update_reminder_by_task_id(s: SessionDep, task_id: int, upd: ReminderU
 	reminder.changed_at = datetime.now(timezone.utc)
 	s.commit()
 	s.refresh(reminder)
-	return reminder.id
+	return reminder.task_id
 
 async def delete_reminder_by_task_id(s: SessionDep, task_id: int) -> int:
 	q = select(Reminders).where(Reminders.task_id == task_id)
