@@ -2,7 +2,7 @@
 from enum import StrEnum
 from sqlalchemy import ColumnElement
 from sqlmodel import Session, and_, asc, between, desc, select, col
-from sympy import ExactQuotientFailed
+#from sympy import ExactQuotientFailed
 """ typing imports """
 from typing import List, Optional, Sequence, Type, TypeVar, Union
 """ datetime imports """
@@ -77,12 +77,15 @@ async def get_user_by_id(s: SessionDep, id: int) -> Optional[Users]:
 async def get_users_by_ids(
 		s: SessionDep, ids: Union[List[int], Sequence[int]]
   ) -> Sequence[Users]:
-	users: Sequence[Users] = []
+	query = select(Users).where(Users.id.in_(ids))
+	users = s.exec(query).all()
+	return users
+	"""users: Sequence[Users] = []
 	for id in ids:
 		user = await get_user_by_id(s=s, id=id)
 		if user:
 			users.append(user)
-	return users
+	return users"""
 
 """ CREATE """
 async def create_user(s: SessionDep, user: UserBase) -> int:
@@ -388,6 +391,11 @@ async def create_plan(
 
 async def get_all_reminders(s: SessionDep) -> Sequence[Reminders]:
 	return s.exec(select(Reminders)).all()
+
+async def get_reminders_by_project_ids(s: SessionDep, project_ids: Union[List[int], Sequence[int]]) -> Sequence[Reminders]:
+	query = select(Reminders).where(Reminders.project_id.in_(project_ids))
+	reminders = s.exec(query).all()
+	return reminders
 
 async def create_remider(s: SessionDep, reminder: ReminderBase) -> int:
 	reminder = Reminders(**reminder.model_dump())
