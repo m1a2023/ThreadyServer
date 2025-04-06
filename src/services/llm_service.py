@@ -91,6 +91,7 @@ async def _match_action_and_create(
 		await gen.create_plan(s, plan)
   
 	if action in [PromptTitle.TASK, PromptTitle.RE_TASK]:
+		print("\n\n" + repr(text) + "\n")
 		built = _build_tasks(response=text)
 		parsed = _parse_tasks(built, project_id)
 		tasks = [ 
@@ -103,17 +104,18 @@ async def _match_action_and_create(
 
 
 def _build_tasks(response: str) -> Dict:
+	cleaned = re.sub(r'^```(?:json)?\n', '', response.strip())
+	cleaned = re.sub(r'\n```$', '', cleaned)
+
 	try:
-		print(response)
-		data = json.loads(response)
-		return data
+		return json.loads(cleaned)
 	except json.JSONDecodeError:
 		print("Error: Invalid JSON format.")
 		return { "error": "Couldn't be parsed"}
 
 def _parse_tasks(tasks: Dict, project_id: int) -> List[TaskBase]:
 	parsed_tasks = []
-	for task in tasks['tasks']:
+	for task in tasks["tasks"]:
 		for task_name, task_desc in task.items():
 			_task = TaskBase(
 				title="task_"+task_name, 
