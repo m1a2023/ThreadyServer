@@ -21,7 +21,6 @@ class Users(UserBase, table=True):
 	projects: List["Projects"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	tasks: List["Tasks"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	team: List["Teams"] = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
-	reminder: "Reminders" = Relationship(back_populates="user", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 
 """ Projects table """
@@ -167,5 +166,4 @@ class Reminders(ReminderBase, table=True):
 	id:int = Field(default=None, sa_column=Column(BigInteger(), primary_key=True, autoincrement=True))
 	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 	task: "Tasks" = Relationship(back_populates="reminders")
-	user: "Users" = Relationship(back_populates="reminders")
 	project: "Projects" = Relationship(back_populates="reminders")

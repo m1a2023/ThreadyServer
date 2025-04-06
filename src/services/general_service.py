@@ -77,15 +77,9 @@ async def get_user_by_id(s: SessionDep, id: int) -> Optional[Users]:
 async def get_users_by_ids(
 		s: SessionDep, ids: Union[List[int], Sequence[int]]
   ) -> Sequence[Users]:
-	query = select(Users).where(Users.id.in_(ids))
+	query = select(Users).where(col(Users.id).in_(ids))
 	users = s.exec(query).all()
 	return users
-	"""users: Sequence[Users] = []
-	for id in ids:
-		user = await get_user_by_id(s=s, id=id)
-		if user:
-			users.append(user)
-	return users"""
 
 """ CREATE """
 async def create_user(s: SessionDep, user: UserBase) -> int:
