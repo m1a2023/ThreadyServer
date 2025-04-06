@@ -387,7 +387,7 @@ async def get_all_reminders(s: SessionDep) -> Sequence[Reminders]:
 	return s.exec(select(Reminders)).all()
 
 async def get_reminders_by_project_ids(s: SessionDep, project_ids: Union[List[int], Sequence[int]]) -> Sequence[Reminders]:
-	query = select(Reminders).where(Reminders.project_id.in_(project_ids))
+	query = select(Reminders).where(col(Reminders.project_id).in_(project_ids))
 	reminders = s.exec(query).all()
 	return reminders
 

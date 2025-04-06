@@ -45,7 +45,7 @@ class Projects(ProjectBase, table=True):
 	team: List["Teams"] = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	context: "Context" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	plans: "Plans" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
-	reminder: "Reminders" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+	# reminder: "Reminders" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 
 """ Tasks table """
@@ -83,7 +83,7 @@ class Tasks(TaskBase, table=True):
 	changed_at: Optional[datetime] = Field(default=None)
 	user: "Users" = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
 	project: "Projects" = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
-	reminder: "Reminders" = Relationship(back_populates="task", sa_relationship_kwargs={"lazy": "joined"})
+	# reminder: "Reminders" = Relationship(back_populates="task", sa_relationship_kwargs={"lazy": "joined"})
 
 """ Teams tables """
 class TeamRoles(StrEnum):
@@ -151,10 +151,9 @@ class Plans(PlanBase, table=True):
 
 """ Reminders table """
 class ReminderBase(SQLModel):
-	task_id: int = Field(index=True, sa_type=BigInteger, foreign_key="tasks.id")
+	task_id: int = Field(index=True, sa_type=BigInteger, foreign_key="tasks.id", primary_key=True)
 	title: str = Field(default=None)
 	send_time: Optional[datetime] = Field(default=None)
-	user_id: int = Field(index=True, sa_type=BigInteger, foreign_key="users.id")
 	project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")
 
 class ReminderUpdate(SQLModel):
@@ -163,7 +162,5 @@ class ReminderUpdate(SQLModel):
 	user_id: Optional[int] = Field(index=True, sa_type=BigInteger, foreign_key="users.id")
 
 class Reminders(ReminderBase, table=True):
-	id:int = Field(default=None, sa_column=Column(BigInteger(), primary_key=True, autoincrement=True))
 	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
-	task: "Tasks" = Relationship(back_populates="reminders")
-	project: "Projects" = Relationship(back_populates="reminders")
+	changed_at: Optional[datetime] = Field(default=None)
