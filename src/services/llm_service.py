@@ -1,8 +1,6 @@
 """ FastAPI imports """
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, StreamingResponse
-""" Pydantic imports """
-from pydantic import Json
 """ SQLModel imports """
 from sqlmodel import and_, desc, select
 """ httpx import """
