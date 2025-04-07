@@ -52,7 +52,10 @@ async def get_task_by_id(s: SessionDep, id: int):
 async def create_task(s: SessionDep, task: TaskBase):
 	try:
 		id_task = await gen.create_task(s, task)
-		remind = ReminderBase(title = task.title, send_time=datetime.now() + timedelta(hours=(task.deadline - datetime.now()).total_seconds() / 3600 - 24), user_id=task.user_id, project_id=task.project_id, task_id=id_task)
+		if task.deadline:
+			remind = ReminderBase(title = task.title, send_time=datetime.now() + timedelta(hours=(task.deadline - datetime.now()).total_seconds() / 3600 - 24), user_id=task.user_id, project_id=task.project_id, task_id=id_task)
+		else:
+			remind = ReminderBase(title = task.title,  user_id=task.user_id, project_id=task.project_id, task_id=id_task)
 		await gen.create_remider(s, remind)
 		return id_task
 	except SQLAlchemyError as e:
