@@ -96,7 +96,7 @@ async def _match_action_and_create(
 		await gen.create_tasks(s, tasks)
   
 	if action in [PromptTitle.DIV_TASK]:
-		return
+		return 
 
 
 def _build_tasks(response: str) -> Dict:
@@ -112,6 +112,10 @@ def _build_tasks(response: str) -> Dict:
 
 def _parse_tasks(tasks: Dict, project_id: int) -> List[TaskBase]:
 	parsed_tasks = []
+	print("\n\ntasks: ")
+	print(tasks)
+	print("\n")
+ 
 	for task in tasks["tasks"]:
 		for task_name, task_desc in task.items():
 			_task = TaskBase(
