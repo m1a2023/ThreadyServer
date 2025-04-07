@@ -97,7 +97,7 @@ async def get_least_time_duration_task(tasks: List[Tasks]) -> Dict:
                 result = task
     return {"title" : result.title, "duration" : result_duration}
 
-async def get_developer_report(s: Session, user_id: int) -> Dict:
+async def get_developer_report(s: SessionDep, user_id: int) -> Dict:
     tasks = await get_completed_tasks_by_user_id(s, user_id)
     overdue_tasks = await get_overdue_tasks_by_user_id(s, user_id)
     all_tasks = await get_all_tasks_by_user_id(s, user_id)
@@ -171,7 +171,7 @@ async def get_most_productive_developer(s: Session, users: List[Users]) -> Optio
     max_task_quantity = 0
     developer = None
 
-    if users is None:
+    if len(users) == 0:
         return None
     else:
         for user in users:
@@ -187,7 +187,7 @@ async def get_most_flawed_developer(s: Session, users: List[Users]) -> Optional[
     max_task_quantity = 100000
     developer = None
 
-    if users is None:
+    if len(users) == 0:
         return None
     else:
         for user in users:
@@ -200,7 +200,7 @@ async def get_most_flawed_developer(s: Session, users: List[Users]) -> Optional[
     return {"name" : developer.name, "quantity" : max_task_quantity}
 
 async def get_most_valuable_developer(s: Session, users: List[Users]) -> Optional[Dict]:
-    if not Users:
+    if len(users) == 0:
         return None
 
     max_effectiveness = 0
@@ -209,7 +209,12 @@ async def get_most_valuable_developer(s: Session, users: List[Users]) -> Optiona
     for user in users:
         overdue_quantity = len(await get_overdue_tasks_by_user_id(s, user.id))
         quantity = len(await get_all_tasks_by_user_id(s, user.id))
-        effectiveness = 100 - ((overdue_quantity/quantity) * 100)
+        effectiveness = 100
+
+        if quantity != 0:
+            effectiveness -= ((overdue_quantity/quantity) * 100)
+        else:
+            effectiveness = 0
 
         if max_effectiveness <= effectiveness:
             max_effectiveness = effectiveness
@@ -217,7 +222,7 @@ async def get_most_valuable_developer(s: Session, users: List[Users]) -> Optiona
 
     return {"name" : developer.name, "effectiveness" : max_effectiveness}
 
-async def get_project_report(s: Session, project_id: int) -> Dict:
+async def get_project_report(s: SessionDep, project_id: int) -> Dict:
     project_title = await get_project_title_by_project_id(s, project_id)
     total_quantity_of_tasks = len(await get_all_tasks_by_project_id(s, project_id))
     quantity_of_compleated_tasks = len(await get_compleated_tasks_by_project_id(s, project_id))

@@ -15,6 +15,7 @@ database_url = f"postgresql+psycopg2://{USER}:{PASSWORD}@{SERVER}:{PORT}/{DB}"
 engine = create_engine(database_url, echo=True)
 
 async def init_database_and_tables() -> None:
+  #SQLModel.metadata.drop_all(engine)
   SQLModel.metadata.create_all(engine)
 
 
