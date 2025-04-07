@@ -12,6 +12,8 @@ from core.db import SessionDep, get_db
 from services import general_service as gen
 from models.db_models import TaskBase, TaskUpdate, Tasks, ReminderBase, ReminderUpdate, Reminders
 
+from datetime import datetime, timedelta
+
 
 """ APIRouter added to upper router(db/__init__.py) """
 router = APIRouter(prefix="/tasks", tags=["/tasks"])
@@ -50,7 +52,7 @@ async def get_task_by_id(s: SessionDep, id: int):
 async def create_task(s: SessionDep, task: TaskBase):
 	try:
 		id_task = await gen.create_task(s, task)
-		remind = ReminderBase(title = task.title, send_time=task.deadline, user_id=task.user_id, project_id=task.project_id, task_id=id_task)
+		remind = ReminderBase(title = task.title, send_time=datetime.now() + timedelta(hours=(task.deadline - datetime.now()).total_seconds() / 3600 - 24), user_id=task.user_id, project_id=task.project_id, task_id=id_task)
 		await gen.create_remider(s, remind)
 		return id_task
 	except SQLAlchemyError as e:
@@ -69,7 +71,10 @@ async def create_tasks(s: SessionDep, tasks: List[TaskBase]):
 @router.put("/{id}", dependencies=[Depends(get_db)], response_model=int)
 async def update_task_by_id(s: SessionDep, id: int, upd: TaskUpdate):
 	try:
-		updRemind = ReminderUpdate(title=upd.title, send_time=upd.deadline, user_id=upd.user_id)
+		if upd.title:
+			updRemind = ReminderUpdate(title=upd.title, send_time=datetime.now() + timedelta(hours=(upd.deadline - datetime.now()).total_seconds() / 3600 - 24))
+		else:
+			updRemind = ReminderUpdate(send_time=datetime.now() + timedelta(hours=(upd.deadline - datetime.now()).total_seconds() / 3600 - 24))
 		await gen.update_reminder_by_task_id(s, id, updRemind)
 		return await gen.update_task_by_id(s, id, upd)
 	except SQLAlchemyError as e:
