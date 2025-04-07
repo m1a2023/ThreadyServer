@@ -1,7 +1,7 @@
 """ FastAPI imports """
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 """ SQLModel imports"""
-from sqlmodel import select
+from sqlmodel import col, select
 """ SQLAlchemy imports """
 from sqlalchemy.exc import SQLAlchemyError
 """ typing imports """
@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Union
 """ Internal imports """
 from core.db import SessionDep, get_db
 from services import general_service as gen
-from models.db_models import TeamBase, TeamUpdate, Teams
+from models.db_models import Errors, TeamBase, TeamUpdate, Teams, Users
 
 
 """ APIRouter added to upper router(db/__init__.py) """
@@ -35,6 +35,13 @@ async def get_team_by_project_id(s: SessionDep, id: int):
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error getting team by project_id {id}: {str(e)}")
 
+@router.get("/is/admin/{user_id}/project/{project_id}", dependencies=[Depends(get_db)], response_model=bool)
+async def is_admin(s: SessionDep, user_id: int, project_id: int):
+	try:
+		return await gen.is_admin(s, user_id, project_id)
+	except SQLAlchemyError as e:
+		raise HTTPException(status_code=500, detail=f"Error getting team by project_id {id}: {str(e)}")
+
 @router.get("/{id}", dependencies=[Depends(get_db)], response_model=Teams)
 async def get_team_by_id(s: SessionDep, id: int):
 	try:
@@ -52,9 +59,12 @@ async def create_team(s: SessionDep, owner_id: int, project_id: int):
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error creating team: {str(e)}")
 
-@router.post("/user/{user_id}/project/{project_id}", dependencies=[Depends(get_db)], response_model=int)
+@router.post("/user/{user_id}/project/{project_id}", dependencies=[Depends(get_db)], response_model=Union[int, str])
 async def add_user_to_team(s: SessionDep, user_id: int, project_id: int):
 	try:
+		if not gen.is_present_by_id(s, Users, user_id):
+			return Errors.DOES_NOT_EXIST
+ 
 		team = TeamBase(user_id=user_id, project_id=project_id)
 		return await gen.add_user_to_team(s, team)
 	except SQLAlchemyError as e:

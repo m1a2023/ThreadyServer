@@ -6,10 +6,15 @@ from typing import Optional, List
 """ datetime imports """
 from datetime import datetime, timezone
 """ enum imports """
-from enum import StrEnum
+from enum import Enum, StrEnum
 
 
 """ Tables start here """
+
+class Errors(StrEnum):
+	DOES_NOT_EXIST = 'DOES_NOT_EXIST'
+	NO_ACCESS = 'NO_ACCESS'
+
 
 """ Users table """
 class UserBase(SQLModel):
@@ -27,6 +32,7 @@ class Users(UserBase, table=True):
 class ProjectBase(SQLModel):
 	title: str = Field(index=True, max_length=128)
 	description: Optional[str] = Field(default=None, max_length=1024)
+	chat_link: Optional[str] = Field(default=None, max_length=256)
 	repo_link: Optional[str] = Field(default=None, max_length=256)
 	owner_id: int = Field(default=None, sa_column=Column(BigInteger(), ForeignKey('users.id')))
 
@@ -34,6 +40,7 @@ class ProjectUpdate(SQLModel):
 	title: Optional[str] = Field(default=None, max_length=128)
 	description: Optional[str] = Field(default=None, max_length=1024)
 	repo_link: Optional[str] = Field(default=None, max_length=256)
+	chat_link: Optional[str] = Field(default=None, max_length=256)
 	changed_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Projects(ProjectBase, table=True):
@@ -45,7 +52,6 @@ class Projects(ProjectBase, table=True):
 	team: List["Teams"] = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	context: "Context" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 	plans: "Plans" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
-	# reminder: "Reminders" = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 
 """ Tasks table """
@@ -83,7 +89,6 @@ class Tasks(TaskBase, table=True):
 	changed_at: Optional[datetime] = Field(default=None)
 	user: "Users" = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
 	project: "Projects" = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
-	# reminder: "Reminders" = Relationship(back_populates="task", sa_relationship_kwargs={"lazy": "joined"})
 
 """ Teams tables """
 class TeamRoles(StrEnum):
@@ -152,6 +157,7 @@ class Plans(PlanBase, table=True):
 """ Reminders table """
 class ReminderBase(SQLModel):
 	task_id: int = Field(index=True, sa_type=BigInteger, foreign_key="tasks.id", primary_key=True)
+	user_id: Optional[int] = Field(index=True, sa_type=BigInteger)
 	title: str = Field(default=None)
 	send_time: Optional[datetime] = Field(default=None)
 	project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")

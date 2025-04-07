@@ -1,5 +1,4 @@
 """ FastAPI imports """
-from re import A
 import traceback
 from fastapi import APIRouter, Body, Depends, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse

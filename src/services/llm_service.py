@@ -5,6 +5,9 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from sqlmodel import and_, desc, select
 """ httpx import """
 import httpx
+
+import json
+import re
 """ typing imports """
 from typing import Any, Dict, List, Optional, Union
 """ Internal imports """
@@ -12,8 +15,6 @@ from core.db import SessionDep
 from services import general_service as gen
 from models.db_models import Context, ContextBase, MessageRole, PlanBase, PromptTitle, Prompts, TaskBase, Tasks
   
-import json
-import re
 
 
 async def general_request(
@@ -48,7 +49,6 @@ async def general_request(
 		text = prompt_query.prompt + '\n\n' + description
 		if 'problem' in request.keys():
 			text += "\nProblem description: " + request['problem']
-		
 		messages['messages'].append({ 'role': 'user', 'text': text })
   
 		await gen.create_context(s, ContextBase(
@@ -58,7 +58,6 @@ async def general_request(
 
 	context.extend(messages['messages'])
 	request['messages'] = context
- 
 	""" Sending post request to external api """
 	async with httpx.AsyncClient(timeout=timeout) as client:
 		response = await client.post(url=url, headers=headers, json=request)
@@ -89,7 +88,6 @@ async def _match_action_and_create(
 		await gen.create_plan(s, plan)
   
 	if action in [PromptTitle.TASK, PromptTitle.RE_TASK]:
-		print("\n\n" + repr(text) + "\n")
 		built = _build_tasks(response=text)
 		parsed = _parse_tasks(built, project_id)
 		tasks = [ 
@@ -102,11 +100,12 @@ async def _match_action_and_create(
 
 
 def _build_tasks(response: str) -> Dict:
-	cleaned = re.sub(r'^```(?:json)?\n', '', response.strip())
-	cleaned = re.sub(r'\n```$', '', cleaned)
-
 	try:
-		return json.loads(cleaned)
+		match = re.search(r'\{[\s\S]*\}', response)
+		if not match:
+			return { "error": "Couldn't be parsed"}
+		clean_json = match.group()
+		return json.loads(clean_json)
 	except json.JSONDecodeError:
 		print("Error: Invalid JSON format.")
 		return { "error": "Couldn't be parsed"}

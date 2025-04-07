@@ -33,35 +33,21 @@ from models.db_models import (
 async def is_present_by_id(s: SessionDep, table: type, id: int) -> bool:
 	return s.exec(select(table).where(table.id == id)).first() is not None
 
+async def is_admin(s: SessionDep, user_id: int, project_id: int) -> bool:
+	user = (s.exec(
+			select(Teams)
+   		.where(and_(Teams.user_id == user_id, Teams.project_id == project_id)))
+			.first())
+	if user:
+		return user.role == TeamRoles.ADMIN
+	return False
+	
+ 
 class SortBy(StrEnum):
 	LATEST = 'latest'
 	NONE = 'none'
 	OLDER = 'older'
 
-""" GET """
-T = TypeVar("T")
-async def get(
-			s: SessionDep,
-			table: Type[T],
-			filters: Optional[List[ColumnElement]],
-			single: bool
-		) -> Optional[Union[T, Sequence[T]]]:
-	q = select(table)
-	if filters:
-		q = q.where(*filters)
-
-	result = s.exec(q)
-	return result.first() if single else result.all()
-
-""" CREATE """
-async def create(s: SessionDep, entities: T) -> Union[T, List[T]]:
-	s.add(entities)
-	s.commit()
-	s.refresh(entities)
-	return entities
-
-""" UPDATE """
-""" DELETE """
 
 #*
 #*  Users table
@@ -176,6 +162,8 @@ async def update_project_by_id(s: SessionDep, project_id: int, update: ProjectUp
 		project.description = update.description
 	if update.repo_link is not None:
 		project.repo_link = update.repo_link
+	if update.chat_link is not None:
+		project.chat_link = update.repo_link
 
 	s.commit()
 	s.refresh(project)
