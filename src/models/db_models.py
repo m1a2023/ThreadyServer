@@ -161,12 +161,12 @@ class ReminderBase(SQLModel):
 	title: str = Field(default=None)
 	send_time: Optional[datetime] = Field(default=None)
 	project_id: int = Field(index=True, sa_type=BigInteger, foreign_key="projects.id")
-	user_id: Optional[int] = Field(index=True, sa_type=BigInteger(),default=None)
+	user_id: Optional[int] = Field(index=True, sa_type=BigInteger, default=None)
 
 class ReminderUpdate(SQLModel):
 	title: Optional[str] = Field(default=None)
 	send_time: Optional[datetime] = Field(default=None)
-	user_id: Optional[int] = Field(index=True, sa_type=BigInteger(),default=None)
+	user_id: Optional[int] = Field(index=True, sa_type=BigInteger, default=None)
 
 class Reminders(ReminderBase, table=True):
 	created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
