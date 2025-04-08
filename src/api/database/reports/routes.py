@@ -16,9 +16,9 @@ from models.db_models import TeamBase, TeamUpdate, Teams,Tasks
 router = APIRouter(prefix="/reports", tags=["/reports"])
 
 @router.get("/developer/{user_d}", response_model=Dict)
-async def get_developer_report(user_d: int, s: SessionDep):
+async def get_developer_report(user_d: int, project_id: int, s: SessionDep):
     try:
-        report = await rep.get_developer_report(s, user_d)
+        report = await rep.get_developer_report(s, user_d, project_id)
         if report is None:
             raise HTTPException(status_code=404,detail=f"Erorr creating report by user_d {user_d}")
         return report

@@ -29,25 +29,26 @@ async def is_present_by_id(s: SessionDep, table: type, id: int) -> bool:
 #     query = select(Tasks).where(Tasks.user_id == user_id)
 #     return s.exec(query).all()
 
-async def get_completed_tasks_by_user_id(s: SessionDep, user_id: int) -> Sequence[Tasks]:
-		query = select(Tasks).where(Tasks.user_id == user_id, Tasks.status == TaskStatus.DONE)
+async def get_completed_tasks_by_user_id(s: SessionDep, user_id: int, project_id: int) -> Sequence[Tasks]:
+		query = select(Tasks).where(Tasks.user_id == user_id, Tasks.status == TaskStatus.DONE, Tasks.project_id == project_id)
 		return s.exec(query).all()
 
-async def get_tasks_in_progress_by_user_id(s: SessionDep, user_id: int) -> Sequence[Tasks]:
-		query = select(Tasks).where(Tasks.user_id == user_id, Tasks.status == TaskStatus.IN_PROGRESS)
+async def get_tasks_in_progress_by_user_id(s: SessionDep, user_id: int, project_id: int) -> Sequence[Tasks]:
+		query = select(Tasks).where(Tasks.user_id == user_id, Tasks.status == TaskStatus.IN_PROGRESS, Tasks.project_id == project_id)
 		return s.exec(query).all()
 
-async def get_todo_tasks_by_user_id(s: SessionDep, user_id: int) -> Sequence[Tasks]:
-		query = select(Tasks).where(Tasks.user_id == user_id, Tasks.status == TaskStatus.TODO)
+async def get_todo_tasks_by_user_id(s: SessionDep, user_id: int, project_id: int) -> Sequence[Tasks]:
+		query = select(Tasks).where(Tasks.user_id == user_id, Tasks.status == TaskStatus.TODO, Tasks.project_id == project_id)
 		return s.exec(query).all()
 
-async def get_overdue_tasks_by_user_id(s: SessionDep, user_id: int) -> Sequence[Tasks]:
+async def get_overdue_tasks_by_user_id(s: SessionDep, user_id: int, project_id: int) -> Sequence[Tasks]:
 		q = select(Tasks)
 
 		q = (q.where(
-						and_(Tasks.user_id == user_id,
-							Tasks.status != TaskStatus.DONE,
-							Tasks.deadline is not None)))
+			and_(Tasks.user_id == user_id,
+				Tasks.status != TaskStatus.DONE,
+				Tasks.project_id == project_id,
+				Tasks.deadline is not None)))
 		tasks = s.exec(q).all()
 		_tasks = []
 		for task in tasks:
@@ -55,8 +56,8 @@ async def get_overdue_tasks_by_user_id(s: SessionDep, user_id: int) -> Sequence[
 				_tasks.append(task)
 		return s.exec(q).all()
 
-async def get_all_tasks_by_user_id(s: Session, user_id: int) -> Sequence[Tasks]:
-    query = select(Tasks).where(Tasks.user_id == user_id)
+async def get_all_tasks_by_user_id(s: Session, user_id: int, project_id: int) -> Sequence[Tasks]:
+    query = select(Tasks).where(Tasks.user_id == user_id, Tasks.project_id == project_id)
     return s.exec(query).all()
 
 async def get_task_allotted_time(task: Tasks) -> float:
@@ -147,12 +148,12 @@ async def get_least_time_duration_task(tasks: Sequence[Tasks]) -> Optional[Dict]
 			"duration": 0.0
 		}
 
-async def get_developer_report(s: SessionDep, user_id: int) -> Dict:
-		tasks = await get_completed_tasks_by_user_id(s, user_id)
-		overdue_tasks = await get_overdue_tasks_by_user_id(s, user_id)
-		all_tasks = await get_all_tasks_by_user_id(s, user_id)
-		total_in_progress_tasks = await get_tasks_in_progress_by_user_id(s, user_id)
-		total_todo_tasks = await get_todo_tasks_by_user_id(s, user_id)
+async def get_developer_report(s: SessionDep, user_id: int, project_id: int) -> Dict:
+		tasks = await get_completed_tasks_by_user_id(s, user_id, project_id)
+		overdue_tasks = await get_overdue_tasks_by_user_id(s, user_id, project_id)
+		all_tasks = await get_all_tasks_by_user_id(s, user_id, project_id)
+		total_in_progress_tasks = await get_tasks_in_progress_by_user_id(s, user_id, project_id)
+		total_todo_tasks = await get_todo_tasks_by_user_id(s, user_id, project_id)
 		developer_name = await get_user_name_by_user_id(s, user_id)
 		total_time = 0.0
 
@@ -161,7 +162,7 @@ async def get_developer_report(s: SessionDep, user_id: int) -> Dict:
 
 		all_users_tasks_duration = {}
 
-		tasks = await get_all_tasks_by_user_id(s, user_id)
+		tasks = await get_all_tasks_by_user_id(s, user_id, project_id)
 
 		for task in tasks:
 				task_info = await calculate_task_duration(task)
