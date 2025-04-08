@@ -15,7 +15,7 @@ from models.db_models import TeamBase, TeamUpdate, Teams,Tasks
 """ APIRouter added to upper router(db/__init__.py) """
 router = APIRouter(prefix="/reports", tags=["/reports"])
 
-@router.get("/developer/{user_d}", response_model=Dict)
+@router.get("/project/{project_id}/developer/{user_d}", response_model=Dict)
 async def get_developer_report(user_d: int, project_id: int, s: SessionDep):
     try:
         report = await rep.get_developer_report(s, user_d, project_id)

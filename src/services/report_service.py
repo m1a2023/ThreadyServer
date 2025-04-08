@@ -228,7 +228,7 @@ async def get_overdue_tasks_by_project_id(s: SessionDep, project_id: int) -> Seq
 				_tasks.append(task)
 	return _tasks
 
-async def get_most_productive_developer(s: SessionDep, users: Sequence[Users]) -> Optional[Dict]:
+async def get_most_productive_developer(s: SessionDep, users: Sequence[Users], project_id: int) -> Optional[Dict]:
 	max_task_quantity = 0
 	developer = None
 
@@ -236,7 +236,7 @@ async def get_most_productive_developer(s: SessionDep, users: Sequence[Users]) -
 		return {"name": "Нет разработчиков", "quantity": 0}
 	else:
 		for user in users:
-			quantity = len(await get_completed_tasks_by_user_id(s, user.id))
+			quantity = len(await get_completed_tasks_by_user_id(s, user.id, project_id))
 
 			if quantity > max_task_quantity:
 				max_task_quantity = quantity
@@ -246,7 +246,7 @@ async def get_most_productive_developer(s: SessionDep, users: Sequence[Users]) -
 		return {"name" : developer.name, "quantity" : max_task_quantity}
 	else: return {"name": "None", "quantity": -1}
 
-async def get_most_flawed_developer(s: SessionDep, users: Sequence[Users]) -> Optional[Dict]:
+async def get_most_flawed_developer(s: SessionDep, users: Sequence[Users], project_id: int) -> Optional[Dict]:
 	max_task_quantity = 100000
 	developer = None
 
@@ -254,7 +254,7 @@ async def get_most_flawed_developer(s: SessionDep, users: Sequence[Users]) -> Op
 		return {"name": "Нет разработчиков", "quantity": 0}
 	else:
 		for user in users:
-			quantity = len(await get_overdue_tasks_by_user_id(s, user.id))
+			quantity = len(await get_overdue_tasks_by_user_id(s, user.id, project_id))
 
 			if quantity < max_task_quantity:
 				max_task_quantity = quantity
@@ -263,13 +263,13 @@ async def get_most_flawed_developer(s: SessionDep, users: Sequence[Users]) -> Op
 		return {"name" : developer.name, "quantity" : max_task_quantity}
 	else: return {"name" : "None", "quantity" : -1}
 
-async def get_most_valuable_developer(s: SessionDep, users: Sequence[Users]) -> Optional[Dict]:
+async def get_most_valuable_developer(s: SessionDep, users: Sequence[Users], project_id: int) -> Optional[Dict]:
 	max_effectiveness = 0
 	developer = None
 
 	for user in users:
-		overdue_quantity = len(await get_overdue_tasks_by_user_id(s, user.id))
-		quantity = len(await get_all_tasks_by_user_id(s, user.id))
+		overdue_quantity = len(await get_overdue_tasks_by_user_id(s, user.id, project_id))
+		quantity = len(await get_all_tasks_by_user_id(s, user.id, project_id))
 
 		if quantity == 0:
 			continue
@@ -295,9 +295,9 @@ async def get_project_report(s: SessionDep, project_id: int) -> Dict:
 		quantity_of_overdue_tasks = len(await get_overdue_tasks_by_project_id(s, project_id))
 
 		users = await get_developers_by_project_id(s, project_id)
-		most_valuable_developer = await get_most_valuable_developer(s, users)
-		most_productive_developer = await get_most_productive_developer(s, users)
-		most_flawed_developer = await get_most_flawed_developer(s, users)
+		most_valuable_developer = await get_most_valuable_developer(s, users, project_id)
+		most_productive_developer = await get_most_productive_developer(s, users, project_id)
+		most_flawed_developer = await get_most_flawed_developer(s, users, project_id)
 
 		all_tasks_in_project_with_duration = {}
 		tasks = await get_all_tasks_by_project_id(s, project_id)
