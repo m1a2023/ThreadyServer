@@ -13,6 +13,7 @@ from core.db import SessionDep
 from models.db_models import (
   Context,
   ContextBase,
+  Errors,
   MessageRole,
   PlanBase,
   Plans,
@@ -205,9 +206,12 @@ async def create_tasks(s: SessionDep, tasks: Union[List[TaskBase], Sequence[Task
 """ UPDATE """
 async def update_task_by_id(s: SessionDep, task_id: int, upd: TaskUpdate) -> int:
 	q = select(Tasks).where(Tasks.id == task_id)
-	task = s.exec(q).one()
+	task = s.exec(q).first()
 
 	update_data = upd.model_dump(exclude_unset=True)
+	
+	if task is None:
+		return -1
 
 	for field, value in update_data.items():
 		setattr(task, field, value)

@@ -74,11 +74,14 @@ async def create_tasks(s: SessionDep, tasks: List[TaskBase]):
 @router.put("/{id}", dependencies=[Depends(get_db)], response_model=int)
 async def update_task_by_id(s: SessionDep, id: int, upd: TaskUpdate):
 	try:
-		if upd.title:
-			updRemind = ReminderUpdate(title=upd.title, send_time=datetime.now() + timedelta(hours=(upd.deadline - datetime.now()).total_seconds() / 3600 - 24))
+		upd_remind = None
+		if upd.title and upd.deadline:
+			upd_remind = ReminderUpdate(title=upd.title, send_time=datetime.now() + timedelta(hours=(upd.deadline - datetime.now()).total_seconds() / 3600 - 24))
 		else:
-			updRemind = ReminderUpdate(send_time=datetime.now() + timedelta(hours=(upd.deadline - datetime.now()).total_seconds() / 3600 - 24))
-		await gen.update_reminder_by_task_id(s, id, updRemind)
+			if upd.deadline:
+				upd_remind = ReminderUpdate(send_time=datetime.now() + timedelta(hours=(upd.deadline - datetime.now()).total_seconds() / 3600 - 24))
+		if upd_remind:
+			await gen.update_reminder_by_task_id(s, id, upd_remind)
 		return await gen.update_task_by_id(s, id, upd)
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error updating task by id {id}: {str(e)}")
