@@ -78,8 +78,8 @@ class TaskUpdate(SQLModel):
 	title: Optional[str] = Field(default=None, max_length=64)
 	description: Optional[str] = Field(default=None, max_length=1024)
 	deadline: Optional[datetime] = Field(default=None)
-	priority: Optional[TaskPriority] = Field(default=TaskPriority.MEDIUM)
-	status: Optional[TaskStatus] = Field(default=TaskStatus.TODO)
+	priority: Optional[TaskPriority] = Field(default=None)
+	status: Optional[TaskStatus] = Field(default=None)
 	user_id: Optional[int] = Field(default=None, sa_column=Column(BigInteger(), ForeignKey('users.id')))
 	changed_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
 

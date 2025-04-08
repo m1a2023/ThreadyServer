@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional, Union
 """ Internal imports """
 from core.db import SessionDep
 from services import general_service as gen
-from models.db_models import Context, ContextBase, MessageRole, PlanBase, PromptTitle, Prompts, TaskBase, Tasks
+from models.db_models import Context, ContextBase, MessageRole, PlanBase, PromptTitle, Prompts, ReminderBase, TaskBase, Tasks
   
 
 
@@ -88,12 +88,25 @@ async def _match_action_and_create(
 		await gen.create_plan(s, plan)
   
 	if action in [PromptTitle.TASK, PromptTitle.RE_TASK]:
+		print("\n\nresponse:\n")
+		print(repr(text))
 		built = _build_tasks(response=text)
 		parsed = _parse_tasks(built, project_id)
 		tasks = [ 
 			Tasks(**task.model_dump()) for task in parsed
 		]
-		await gen.create_tasks(s, tasks)
+		print("\n\nTasks?\n")
+		print(tasks)
+		print("\n\n")
+		ids = await gen.create_tasks(s, tasks)
+		i = 0
+		for task in tasks:
+			id = ids[i]
+			await gen.create_remider(s, ReminderBase(
+				title=task.title, user_id=task.user_id,
+				project_id=task.project_id, task_id=id
+			))
+			i += 1
   
 	if action in [PromptTitle.DIV_TASK]:
 		return 
@@ -103,7 +116,7 @@ def _build_tasks(response: str) -> Dict:
 	try:
 		match = re.search(r'\{[\s\S]*\}', response)
 		if not match:
-			return { "error": "Couldn't be parsed"}
+			return json.loads(response)
 		clean_json = match.group()
 		return json.loads(clean_json)
 	except json.JSONDecodeError:
@@ -113,7 +126,7 @@ def _build_tasks(response: str) -> Dict:
 def _parse_tasks(tasks: Dict, project_id: int) -> List[TaskBase]:
 	parsed_tasks = []
 	print("\n\ntasks: ")
-	print(tasks)
+	print(repr(tasks))
 	print("\n")
  
 	for task in tasks["tasks"]:
