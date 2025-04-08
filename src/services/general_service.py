@@ -390,6 +390,17 @@ async def create_remider(s: SessionDep, reminder: ReminderBase) -> int:
 	s.refresh(reminder)
 	return reminder.task_id
 
+async def create_remiders(s: SessionDep, reminders: List[ReminderBase]) -> Sequence[int]:
+	reminders = [ Reminders(**reminder.model_dump()) for reminder in reminders ] 
+	s.add_all(reminders)
+	s.commit()
+	_ids: List[int] = [ ]
+
+	for rem in reminders:
+		s.refresh(rem)
+		_ids.append(rem.task_id)
+	return tuple(_ids)
+
 async def update_reminder_by_task_id(s: SessionDep, task_id: int, upd: ReminderUpdate) -> int:
 	q = select(Reminders).where(Reminders.task_id == task_id)
 	reminder = s.exec(q).one()
