@@ -67,7 +67,16 @@ async def create_tasks(s: SessionDep, tasks: List[TaskBase]):
 		ids = await gen.create_tasks(s, tasks)
 		if ids is None:
 			raise HTTPException(status_code=404, detail="Error creation tasks")
+		i = 0
+		for task in tasks:
+			id = ids[i]
+			await gen.create_remider(s, ReminderBase(
+				title=task.title, user_id=task.user_id,
+				project_id=task.project_id, task_id=id
+			))
+			i += 1
 		return ids
+
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error creating tasks: {str(e)}")
 
@@ -75,11 +84,18 @@ async def create_tasks(s: SessionDep, tasks: List[TaskBase]):
 async def update_task_by_id(s: SessionDep, id: int, upd: TaskUpdate):
 	try:
 		upd_remind = None
-		if upd.title and upd.deadline:
-			upd_remind = ReminderUpdate(title=upd.title, send_time=datetime.now() + timedelta(hours=(upd.deadline - datetime.now()).total_seconds() / 3600 - 24))
-		else:
-			if upd.deadline:
-				upd_remind = ReminderUpdate(send_time=datetime.now() + timedelta(hours=(upd.deadline - datetime.now()).total_seconds() / 3600 - 24))
+		if upd.deadline:
+			delta = timedelta(hours=(upd.deadline - datetime.now()).total_seconds() / 3600 - 24)
+			if upd.title:
+				upd_remind = ReminderUpdate(title=upd.title, send_time=datetime.now() + delta, user_id=upd.user_id)
+				print("\n\nupd_remd\n")
+				print(upd_remind)
+				print("\n\n")
+			else:
+				upd_remind = ReminderUpdate(send_time=datetime.now() + delta, user_id=upd.user_id)
+				print("\n\nupd_remd\n")
+				print(upd_remind)
+				print("\n\n")
 		if upd_remind:
 			await gen.update_reminder_by_task_id(s, id, upd_remind)
 		return await gen.update_task_by_id(s, id, upd)

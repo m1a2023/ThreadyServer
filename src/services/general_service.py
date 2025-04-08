@@ -208,15 +208,17 @@ async def update_task_by_id(s: SessionDep, task_id: int, upd: TaskUpdate) -> int
 	q = select(Tasks).where(Tasks.id == task_id)
 	task = s.exec(q).first()
 
-	update_data = upd.model_dump(exclude_unset=True)
-	
-	if task is None:
+	if task:
+		if upd.title: task.title = upd.title
+		if upd.description: task.description = upd.description
+		if upd.deadline: task.deadline = upd.deadline
+		if upd.priority: task.priority = upd.priority
+		if upd.status: task.status = upd.status
+		if upd.user_id: task.user_id = upd.user_id
+		task.changed_at = datetime.now(timezone.utc)
+	else:
 		return -1
-
-	for field, value in update_data.items():
-		setattr(task, field, value)
-
-	task.changed_at = datetime.now(timezone.utc)
+	
 	s.commit()
 	s.refresh(task)
 	return task.id
@@ -390,19 +392,32 @@ async def create_remider(s: SessionDep, reminder: ReminderBase) -> int:
 	s.refresh(reminder)
 	return reminder.task_id
 
+async def create_remiders(s: SessionDep, reminders: List[ReminderBase]) -> Sequence[int]:
+	reminders = [ Reminders(**reminder.model_dump()) for reminder in reminders ] 
+	s.add_all(reminders)
+	s.commit()
+	_ids: List[int] = [ ]
+
+	for rem in reminders:
+		s.refresh(rem)
+		_ids.append(rem.task_id)
+	return tuple(_ids)
+
 async def update_reminder_by_task_id(s: SessionDep, task_id: int, upd: ReminderUpdate) -> int:
 	q = select(Reminders).where(Reminders.task_id == task_id)
-	reminder = s.exec(q).one()
+	rem = s.exec(q).one()
 
-	update_data = upd.model_dump(exclude_unset=True)
-
-	for field, value in update_data.items():
-		setattr(reminder, field, value)
-
-	reminder.changed_at = datetime.now(timezone.utc)
+	if rem:
+		if upd.title: rem.title = upd.title
+		if upd.send_time: rem.send_time = upd.send_time
+		if upd.user_id: rem.user_id = upd.user_id
+	else: 
+		return -1
+  
+	rem.changed_at = datetime.now(timezone.utc)
 	s.commit()
-	s.refresh(reminder)
-	return reminder.task_id
+	s.refresh(rem)
+	return rem.task_id
 
 async def delete_reminder_by_task_id(s: SessionDep, task_id: int) -> int:
 	q = select(Reminders).where(Reminders.task_id == task_id)
