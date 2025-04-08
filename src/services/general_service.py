@@ -164,7 +164,7 @@ async def update_project_by_id(s: SessionDep, project_id: int, update: ProjectUp
 	if update.repo_link is not None:
 		project.repo_link = update.repo_link
 	if update.chat_link is not None:
-		project.chat_link = update.repo_link
+		project.chat_link = update.chat_link
 
 	s.commit()
 	s.refresh(project)
