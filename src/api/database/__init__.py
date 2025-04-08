@@ -7,7 +7,7 @@ from .tasks import tasks_router
 from .teams import teams_router
 from .reports import reports_router
 from .reminders import reminders_router
-
+from .plans import plans_router
 
 """ APIRouter added to upper router(api/__init__.py) """
 router = APIRouter()
@@ -18,3 +18,4 @@ router.include_router(tasks_router)
 router.include_router(teams_router)
 router.include_router(reports_router)
 router.include_router(reminders_router)
+router.include_router(plans_router)
