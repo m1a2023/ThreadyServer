@@ -67,7 +67,7 @@ class TaskStatus(StrEnum):
 
 class TaskBase(SQLModel):
 	title: str = Field(default=None, max_length=64)
-	description: Optional[str] = Field(default=None, max_length=1024)
+	description: Optional[str] = Field(default=None, max_length=8192)
 	deadline: Optional[datetime] = Field(default=None)
 	priority: Optional[TaskPriority] = Field(default=TaskPriority.MEDIUM)
 	status: Optional[TaskStatus] = Field(default=TaskStatus.TODO)
@@ -76,7 +76,7 @@ class TaskBase(SQLModel):
 
 class TaskUpdate(SQLModel):
 	title: Optional[str] = Field(default=None, max_length=64)
-	description: Optional[str] = Field(default=None, max_length=1024)
+	description: Optional[str] = Field(default=None, max_length=8192)
 	deadline: Optional[datetime] = Field(default=None)
 	priority: Optional[TaskPriority] = Field(default=None)
 	status: Optional[TaskStatus] = Field(default=None)
