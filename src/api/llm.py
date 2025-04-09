@@ -8,7 +8,7 @@ import httpx
 from typing import Optional, Union
 """ Internal imports """
 from services import llm_service
-from models.llm_models import BaseRequest, CompletionOptions, Message, OptionsRequest, ProblemRequest 
+from models.llm_models import BaseRequest, CompletionOptions, Message, OptionsRequest, ProblemRequest
 from models.db_models import PromptTitle
 from core.db import SessionDep, get_db
 
@@ -18,24 +18,24 @@ router = APIRouter(prefix="/ygpt")
 
 @router.get("/")
 async def send_api_request_to_llm(
-  url_path: str, 
-  json: Optional[dict] = None, 
+  url_path: str,
+  json: Optional[dict] = None,
   stream: Optional[bool] = False,
-  timeout: Optional[int] = 30 
+  timeout: Optional[int] = 30
 ):
   """ Send unblocking error json """
   if not json: return { "error": "Body json prompt is required." }
 
   if stream:
-    """ Get json stream response """ 
+    """ Get json stream response """
     async def _iterate_over_JSONs():
-      async with httpx.AsyncClient() as client: 
+      async with httpx.AsyncClient() as client:
         async with client.stream('POST', url=url_path, json=json, timeout=timeout) as response:
           async for chunk in response.aiter_text():
             yield chunk
     return StreamingResponse(_iterate_over_JSONs(), status_code=200, media_type='application/json')
-  
-  else: 
+
+  else:
     """ Get only one json response """
     async with httpx.AsyncClient() as client:
       response = await client.post(url=url_path, json=json, timeout=timeout)
@@ -53,37 +53,47 @@ async def send_request(
 	json: BaseRequest | ProblemRequest | OptionsRequest = Body(...)
 ) -> JSONResponse:
 	""" Sends request to ygpt """
-	
+
 	""" Building a request """
-	request = { 
+	request = {
 		'modelUri': json.model_uri,
 		'completionOptions': CompletionOptions().model_dump()
 	}
-	
+
 	if isinstance(json, OptionsRequest):
 		request['completionOptions'] = json.options
-		
+
 	if action in [PromptTitle.TASK, PromptTitle.DIV_TASK, PromptTitle.RE_TASK]:
 		request['jsonObject'] = True
-		request['jsonSchema'] = { "schema": { "taskN": "description" }}
+		request['jsonSchema'] = {
+			"type": "object",
+			"properties": {
+				"taskN": {
+				"type": "string",
+				"description": "description"
+				}
+			},
+			"required": ["taskN"]
+			}
 
-	headers = { 
+
+	headers = {
 		'Authorization': 'Bearer ' + json.iam_token,
 		'Content-Type' : 'application/json'
 	}
- 
+
 	if isinstance(json, ProblemRequest):
 		request.update({
 			'problem': json.problem
 		})
-  
+
 	try:
 		response =  await llm_service.general_request(
-			s=s, url=url, 
-			request=request, 
-			headers=headers, 
-			action=action, 
-			project_id=project_id, 
+			s=s, url=url,
+			request=request,
+			headers=headers,
+			action=action,
+			project_id=project_id,
 			context_depth=context_depth,
 			timeout=timeout
 		)
