@@ -52,7 +52,7 @@ async def get_overdue_tasks_by_user_id(s: SessionDep, user_id: int, project_id: 
 		tasks = s.exec(q).all()
 		_tasks = []
 		for task in tasks:
-			if task.deadline and task.deadline < datetime.now(timezone.utc):
+			if task.deadline and task.deadline.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
 				_tasks.append(task)
 		return s.exec(q).all()
 
