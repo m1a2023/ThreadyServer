@@ -34,15 +34,11 @@ async def get_projects_by_owner_id(s: SessionDep, id: int):
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error getting projects by owner_id {id}: {str(e)}")
 
-@router.get("/bat/not/owner/{id}/project/{project_id}", dependencies=[Depends(get_db)], response_model=List[Projects])
+@router.get("/bat/not/owner/{id}/project/{project_id}", dependencies=[Depends(get_db)], response_model=List[int])
 async def get_projects_by_id_where_user_is_not_admin(s: SessionDep, id: int, project_id):
 	try:
 		ids = s.exec(select(Teams.project_id).where(and_(Teams.project_id == project_id, Teams.user_id == id, Teams.role == 'USER'))).all()
-		projects = [ ]
-		for id in ids:
-			proj = await get_project_by_id(s, id)
-			projects.append(proj)
-		return projects
+		return ids
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error getting projects by owner_id {id}: {str(e)}")
 
