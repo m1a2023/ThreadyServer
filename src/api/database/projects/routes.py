@@ -1,7 +1,7 @@
 """ FastAPI imports """
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 """ SQLModel imports"""
-from sqlmodel import select
+from sqlmodel import and_, select
 """ SQLAlchemy imports """
 from sqlalchemy.orm.exc import UnmappedInstanceError
 from sqlalchemy.exc import SQLAlchemyError
@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Union
 """ Internal imports """
 from core.db import SessionDep, get_db
 from services import general_service as gen
-from models.db_models import ProjectBase, ProjectUpdate, Projects, TeamBase
+from models.db_models import ProjectBase, ProjectUpdate, Projects, TeamBase, Teams
 
 
 """ APIRouter added to upper router(db/__init__.py) """
@@ -27,12 +27,25 @@ async def get_all_projects(s: SessionDep):
 		raise HTTPException(status_code=500, detail=f"Error getting project: {e}")
 
 @router.get("/owner/{id}", dependencies=[Depends(get_db)], response_model=List[Projects])
-async def get_project_by_owner_id(s: SessionDep, id: int):
+async def get_projects_by_owner_id(s: SessionDep, id: int):
 	try:
 		projects = await gen.get_projects_by_owner_id(s, id)
 		return projects
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error getting projects by owner_id {id}: {str(e)}")
+
+@router.get("/bat/not/owner/{id}/project/{project_id}", dependencies=[Depends(get_db)], response_model=List[Projects])
+async def get_projects_by_id_where_user_is_not_admin(s: SessionDep, id: int, project_id):
+	try:
+		ids = s.exec(select(Teams.project_id).where(and_(Teams.project_id == project_id, Teams.user_id == id, Teams.role == 'USER'))).all()
+		projects = [ ]
+		for id in ids:
+			proj = await get_project_by_id(s, id)
+			projects.append(proj)
+		return projects
+	except SQLAlchemyError as e:
+		raise HTTPException(status_code=500, detail=f"Error getting projects by owner_id {id}: {str(e)}")
+
 
 @router.get("/bat/user/{id}", dependencies=[Depends(get_db)], response_model=List[Projects])
 async def get_projects_by_user_id(s: SessionDep, id: int):

@@ -110,6 +110,12 @@ async def get_all_projects(s: SessionDep) -> Sequence[Projects]:
 async def get_projects_by_owner_id(s: SessionDep, owner_id: int) -> Optional[Sequence[Projects]]:
 	return s.exec(select(Projects).where(Projects.owner_id == owner_id)).all()
 
+# async def get_projects_by_id_where_user_is_admin(s: SessionDep, id: int) -> Optional[Projects]:
+# 	return s.exec(select(Projects).where(Projects.id == id)).first()
+
+# async def get_project_by_id(s: SessionDep, id: int) -> Optional[Projects]:
+# 	return s.exec(select(Projects).where(Projects.id == id)).first()
+
 async def get_project_by_id(s: SessionDep, id: int) -> Optional[Projects]:
 	return s.exec(select(Projects).where(Projects.id == id)).first()
 
