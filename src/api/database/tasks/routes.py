@@ -105,7 +105,8 @@ async def update_task_by_id(s: SessionDep, id: int, upd: TaskUpdate):
 @router.delete("/{id}", dependencies=[Depends(get_db)], response_model=int)
 async def delete_task_by_id(s: SessionDep, id: int):
 	try:
-		await gen.delete_reminder_by_task_id(s, id)
+		if await gen.exist_reminder_by_task_id(s, id):
+			await gen.delete_reminder_by_task_id(s, id)
 		return await gen.delete_task_by_id(s, id)
 	except SQLAlchemyError as e:
 		raise HTTPException(status_code=500, detail=f"Error deleting task by id {id}: {str(e)}")
