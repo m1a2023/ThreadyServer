@@ -62,19 +62,18 @@ async def send_request(
 
 	if isinstance(json, OptionsRequest):
 		request['completionOptions'] = json.options
-
+		request['jsonSchema'] = { "schema": {
+			"tasks": [
+				{"1": "description"},
+				{"2": "description"},
+				{"3": "description"},
+				{"4": "description"},
+				{"5": "description"},
+			]}
+		}
+		
 	if action in [PromptTitle.TASK, PromptTitle.DIV_TASK, PromptTitle.RE_TASK]:
 		request['jsonObject'] = True
-		request['jsonSchema'] = {
-			"type": "object",
-			"properties": {
-				"taskN": {
-				"type": "string",
-				"description": "description"
-				}
-			},
-			"required": ["taskN"]
-			}
 
 
 	headers = {
