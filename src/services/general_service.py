@@ -42,8 +42,8 @@ async def is_admin(s: SessionDep, user_id: int, project_id: int) -> bool:
 	if user:
 		return user.role == TeamRoles.ADMIN
 	return False
-	
- 
+
+
 class SortBy(StrEnum):
 	LATEST = 'latest'
 	NONE = 'none'
@@ -224,7 +224,7 @@ async def update_task_by_id(s: SessionDep, task_id: int, upd: TaskUpdate) -> int
 		task.changed_at = datetime.now(timezone.utc)
 	else:
 		return -1
-	
+
 	s.commit()
 	s.refresh(task)
 	return task.id
@@ -399,7 +399,7 @@ async def create_remider(s: SessionDep, reminder: ReminderBase) -> int:
 	return reminder.task_id
 
 async def create_remiders(s: SessionDep, reminders: List[ReminderBase]) -> Sequence[int]:
-	reminders = [ Reminders(**reminder.model_dump()) for reminder in reminders ] 
+	reminders = [ Reminders(**reminder.model_dump()) for reminder in reminders ]
 	s.add_all(reminders)
 	s.commit()
 	_ids: List[int] = [ ]
@@ -417,9 +417,9 @@ async def update_reminder_by_task_id(s: SessionDep, task_id: int, upd: ReminderU
 		if upd.title: rem.title = upd.title
 		if upd.send_time: rem.send_time = upd.send_time
 		if upd.user_id: rem.user_id = upd.user_id
-	else: 
+	else:
 		return -1
-  
+
 	rem.changed_at = datetime.now(timezone.utc)
 	s.commit()
 	s.refresh(rem)
@@ -431,3 +431,11 @@ async def delete_reminder_by_task_id(s: SessionDep, task_id: int) -> int:
 	s.delete(reminder)
 	s.commit()
 	return task_id
+
+async def exist_reminder_by_task_id(s: SessionDep, task_id: int) ->bool:
+	q = select(Reminders).where(Reminders.task_id == task_id)
+	reminder = s.exec(q).first()
+	if reminder:
+		return True
+	else:
+		return False
